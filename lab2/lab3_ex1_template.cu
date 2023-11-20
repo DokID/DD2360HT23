@@ -2,13 +2,18 @@
 #include <sys/time.h>
 #include <string>
 #include <random>
+#include <math.h>
 
 #define DataType double
 
 __global__ void vecAdd(DataType *in1, DataType *in2, DataType *out, int len) {
   //@@ Insert code to implement vector addition here
-  for (int iter = 0; iter < len; iter++) {
-    out[iter] = in1[iter] + in2[iter];
+  // for (int iter = 0; iter < len; iter++) {
+    
+  // }
+  int i = blockDim.x * blockIdx.x + threadIdx.x;
+  if(i < len) {
+    out[i] = in1[i] + in2[i];
   }
 }
 
@@ -107,14 +112,17 @@ int main(int argc, char **argv) {
   stopTimer();
 
   //@@ Initialize the 1D grid and block dimensions here
-  dim3 grid(1);
-  dim3 block(16);
+  cudaDeviceProp *prop = (cudaDeviceProp *) malloc (sizeof(cudaDeviceProp));
+  cudaGetDeviceProperties_v2(prop, 0);
+  int threads_per_block = prop->maxThreadsPerBlock;
+  int no_of_blocks = (int) ceil(double(inputLength) / double(threads_per_block));
+
 
   printf("\nRunning kernel...\n");
 
   //@@ Launch the GPU Kernel here <-- TIME THIS
   starTimer();
-  vecAdd<<<grid, block>>>(deviceInput1, deviceInput2, deviceOutput, inputLength);
+  vecAdd<<<no_of_blocks, threads_per_block>>>(deviceInput1, deviceInput2, deviceOutput, inputLength);
   cudaDeviceSynchronize();
   stopTimer();
 
