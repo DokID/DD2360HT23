@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   //@@ Insert code below to initialize hostInput1 and hostInput2 to random numbers, and create reference result in CPU
   // hostInput1 
   // hostInput2
-  vecAdd(hostInput1, hostInput2, resultRef, inputLength);
+  vecAdd(&hostInput1, &hostInput2, &resultRef, inputLength);
 
 
   //@@ Insert code below to allocate GPU memory here
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
   cudaMemcpy(hostOutput, deviceOutput, inputLength * sizeof(double), cudaMemcpyDeviceToHost);
 
   //@@ Insert code below to compare the output with the reference
-  
+
 
   //@@ Free the GPU memory here
 
