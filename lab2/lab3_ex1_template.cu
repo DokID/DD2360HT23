@@ -19,6 +19,17 @@ void vecAddCPU(DataType *in1, DataType *in2, DataType *out, int len) {
  }
 }
 
+int calculateDiff(DataType *host, DataType *device, int len) {
+  int flag = 0;
+  for (int i = 0; i < len; i++) {
+    if (fabs(host[i] - device[i]) > 1e-6) {
+      printf("Results differ at %d: Host: %f; Device: %f", i, host[i], device[i]);
+      flag = 1;
+    }
+  }
+
+  return flag;
+}
 
 
 struct timeval* startTime = (timeval *) malloc(sizeof(timeval));
@@ -60,23 +71,15 @@ int main(int argc, char **argv) {
   //@@ Insert code below to read in inputLength from args
   inputLength = std::stoi(argv[1], nullptr);
 
-  printf("The input length is %d\n", inputLength);
+  //printf("The input length is %d\n", inputLength);
   
   //@@ Insert code below to allocate Host memory for input and output
-  if((hostInput1 = (DataType*) malloc(inputLength * sizeof(DataType))) == NULL) {
-    printf("Could not malloc hostInput1");
-  };
-  if((hostInput2 = (DataType*) malloc(inputLength * sizeof(DataType))) == NULL) {
-    printf("Could not malloc hostInput2");
-  };
-  if((hostOutput = (DataType*) malloc(inputLength * sizeof(DataType))) == NULL) {
-    printf("Could not malloc hostOutput");
-  };
-  if((resultRef = (DataType*) malloc(inputLength * sizeof(DataType))) == NULL) {
-    printf("Could not malloc resultRef");
-  };
+  hostInput1 = (DataType*) malloc(inputLength * sizeof(DataType));
+  hostInput2 = (DataType*) malloc(inputLength * sizeof(DataType));
+  hostOutput = (DataType*) malloc(inputLength * sizeof(DataType));
+  resultRef = (DataType*) malloc(inputLength * sizeof(DataType));
 
-  printf("Initializing vectors...");
+  // printf("Initializing vectors...\n");
   
   //@@ Insert code below to initialize hostInput1 and hostInput2 to random numbers, and create reference result in CPU
   srand(time(0));
@@ -85,45 +88,46 @@ int main(int argc, char **argv) {
     hostInput2[i] = ((double)rand() / RAND_MAX) * (double) 10;
   }
 
-  printf("Running on CPU...");
-
+  printf("\nRunning on CPU...\n");
+  starTimer();
   vecAddCPU(hostInput1, hostInput2, resultRef, inputLength);
+  stopTimer();
 
   //@@ Insert code below to allocate GPU memory here
   cudaMalloc(&deviceInput1, inputLength * sizeof(double));
   cudaMalloc(&deviceInput2, inputLength * sizeof(double));
   cudaMalloc(&deviceOutput, inputLength * sizeof(double));
 
-  printf("Copying memory to device...");
+  printf("Copying memory to device...\n");
 
   //@@ Insert code to below to Copy memory to the GPU here <-- TIME THIS
   starTimer();
   cudaMemcpy(deviceInput1, hostInput1, inputLength * sizeof(double), cudaMemcpyHostToDevice);
   cudaMemcpy(deviceInput2, hostInput2, inputLength * sizeof(double), cudaMemcpyHostToDevice);
-  printTime(stopTimer());
+  stopTimer();
 
   //@@ Initialize the 1D grid and block dimensions here
   dim3 grid(1);
   dim3 block(16);
 
-  printf("Running kernel...");
+  printf("\nRunning kernel...\n");
 
   //@@ Launch the GPU Kernel here <-- TIME THIS
   starTimer();
   vecAdd<<<grid, block>>>(deviceInput1, deviceInput2, deviceOutput, inputLength);
   cudaDeviceSynchronize();
-  printTime(stopTimer());
+  stopTimer();
 
-  printf("Copying results to host...");
+  printf("\nCopying results to host...\n");
 
   //@@ Copy the GPU memory back to the CPU here <-- TIME THIS
   starTimer();
   cudaMemcpy(hostOutput, deviceOutput, inputLength * sizeof(double), cudaMemcpyDeviceToHost);
-  printTime(stopTimer());
+  stopTimer();
 
   //@@ Insert code below to compare the output with the reference
 
-  printf("Cleaning up...");
+  printf("\nResults match: %s\n", calculateDiff(resultRef, hostOutput, inputLength) ? "false" : "true");
 
   //@@ Free the GPU memory here
   cudaFree(deviceInput1);
