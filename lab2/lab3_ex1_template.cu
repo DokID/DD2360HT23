@@ -31,19 +31,18 @@ void starTimer() {
 
 //@@ Insert code to implement timer stop
 
-struct timeval* stopTimer() {
-  struct timeval* currentTime;
-  struct timeval* returnTime;
+void stopTimer() {
+  struct timeval* currentTime = (timeval *) malloc(sizeof(timeval));
+  struct timeval* diff = (timeval *) malloc(sizeof(timeval));
 
   gettimeofday(currentTime, NULL);
-  timersub(startTime, currentTime, returnTime);
+  timersub(currentTime, startTime, diff);
 
-  return returnTime;
-}
+  printf("Time in seconds: %ld\n", diff->tv_sec);
+  printf("Time in microseconds: %ld\n", diff->tv_usec);
 
-void printTime(timeval * time) {
-  printf("Time in seconds: %ld", time->tv_sec);
-  printf("Time in microseconds: %ld", time->tv_usec);
+  free(currentTime);
+  free(diff);
 }
 
 
