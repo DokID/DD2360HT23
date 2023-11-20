@@ -8,9 +8,6 @@
 
 __global__ void vecAdd(DataType *in1, DataType *in2, DataType *out, int len) {
   //@@ Insert code to implement vector addition here
-  // for (int iter = 0; iter < len; iter++) {
-    
-  // }
   int i = blockDim.x * blockIdx.x + threadIdx.x;
   if(i < len) {
     out[i] = in1[i] + in2[i];
@@ -19,9 +16,9 @@ __global__ void vecAdd(DataType *in1, DataType *in2, DataType *out, int len) {
 
 void vecAddCPU(DataType *in1, DataType *in2, DataType *out, int len) {
  //@@ Insert code to implement vector addition here
- for (int iter = 0; iter < len; iter++) {
-   out[iter] = in1[iter] + in2[iter];
- }
+  for (int iter = 0; iter < len; iter++) {
+    out[iter] = in1[iter] + in2[iter];
+  }
 }
 
 int calculateDiff(DataType *host, DataType *device, int len) {
@@ -148,6 +145,7 @@ int main(int argc, char **argv) {
   free(hostOutput);
   free(resultRef);
   free(startTime);
+  free(prop);
 
   return 0;
 }
