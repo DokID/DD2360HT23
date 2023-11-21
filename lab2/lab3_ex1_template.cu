@@ -4,7 +4,7 @@
 #include <random>
 #include <math.h>
 
-#define DataType double
+#define DataType float
 
 __global__ void vecAdd(DataType *in1, DataType *in2, DataType *out, int len) {
   //@@ Insert code to implement vector addition here
@@ -86,8 +86,8 @@ int main(int argc, char **argv) {
   //@@ Insert code below to initialize hostInput1 and hostInput2 to random numbers, and create reference result in CPU
   srand(time(0));
   for (int i = 0; i < inputLength; i++) {
-    hostInput1[i] = ((double)rand() / RAND_MAX) * (double) 10;
-    hostInput2[i] = ((double)rand() / RAND_MAX) * (double) 10;
+    hostInput1[i] = ((DataType)rand() / RAND_MAX) * (DataType) 10;
+    hostInput2[i] = ((DataType)rand() / RAND_MAX) * (DataType) 10;
   }
 
   printf("\nRunning on CPU...\n");
@@ -96,16 +96,16 @@ int main(int argc, char **argv) {
   stopTimer();
 
   //@@ Insert code below to allocate GPU memory here
-  cudaMalloc(&deviceInput1, inputLength * sizeof(double));
-  cudaMalloc(&deviceInput2, inputLength * sizeof(double));
-  cudaMalloc(&deviceOutput, inputLength * sizeof(double));
+  cudaMalloc(&deviceInput1, inputLength * sizeof(DataType));
+  cudaMalloc(&deviceInput2, inputLength * sizeof(DataType));
+  cudaMalloc(&deviceOutput, inputLength * sizeof(DataType));
 
   printf("Copying memory to device...\n");
 
   //@@ Insert code to below to Copy memory to the GPU here <-- TIME THIS
   starTimer();
-  cudaMemcpy(deviceInput1, hostInput1, inputLength * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(deviceInput2, hostInput2, inputLength * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(deviceInput1, hostInput1, inputLength * sizeof(DataType), cudaMemcpyHostToDevice);
+  cudaMemcpy(deviceInput2, hostInput2, inputLength * sizeof(DataType), cudaMemcpyHostToDevice);
   stopTimer();
 
   //@@ Initialize the 1D grid and block dimensions here
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
 
   //@@ Copy the GPU memory back to the CPU here <-- TIME THIS
   starTimer();
-  cudaMemcpy(hostOutput, deviceOutput, inputLength * sizeof(double), cudaMemcpyDeviceToHost);
+  cudaMemcpy(hostOutput, deviceOutput, inputLength * sizeof(DataType), cudaMemcpyDeviceToHost);
   stopTimer();
 
   //@@ Insert code below to compare the output with the reference
