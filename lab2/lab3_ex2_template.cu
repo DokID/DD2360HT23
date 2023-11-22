@@ -7,9 +7,47 @@
 #define DataType double
 
 // Compute C = A * B
-__global__ void gemm(DataType *A, DataType *B, DataType *C, int numARows,
-                      int numAColumns, int numBRows, int numBColumns){
+__global__ void gemm(DataType *A, DataType *B, DataType *C, int numARows, int numAColumns, int numBRows, int numBColumns){
   //@@ Insert code to implement matrix multiplication here
+  int x = blockDim.x * blockIdx.x + threadIdx.x;
+  int y = blockDim.y * blockIdx.y + threadIdx.y;
+  if ((x < numARows) && (y < numBColumns)){
+    DataType sum = (DataType) 0;
+    for (int k = 0; k < numAColumns; k++) {
+        sum += A[x * numAColumns + k] * B[k * numBColumns + y];
+    }
+    C[x * numAColumns + y] = sum;
+  }
+}
+
+void gemmCPU(DataType *A, DataType *B, DataType *C, int numARows,int numAColumns, int numBRows, int numBColumns) {
+  // naive matrix multiplication
+  for (int i = 0; i < numARows; i++) {
+    for (int j = 0; j < numBColumns; j++) {
+      DataType sum = (DataType) 0;
+      for (int k = 0; k < numAColumns; k++) {
+        sum += A[i * numAColumns + k] * B[k * numBColumns + j];
+      }
+      C[i * numAColumns + j] = sum;
+    }
+  }
+}
+
+int calculateDiff(DataType *host, DataType *device, int rows, int cols) {
+  int flag = 0;
+  for (int i = 0; i < rows; i++) {
+    for (int j = 0; j < cols; j++) {
+      int id = i * cols + j;
+      if (fabs(host[id] - device[id]) > 1e-6) {
+        printf("Results differ at (%d,%d): Host: %f; Device: %f", i, j, host[id], device[id]);
+        flag = 1;
+      }
+    }
+  }
+
+  return flag;
+}
+
 
 struct timeval* startTime = (timeval *) malloc(sizeof(timeval));
 
