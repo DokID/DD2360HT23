@@ -16,7 +16,7 @@ __global__ void gemm(DataType *A, DataType *B, DataType *C, int numARows, int nu
     for (int k = 0; k < numAColumns; k++) {
         sum += A[x * numAColumns + k] * B[k * numBColumns + y];
     }
-    C[x * numAColumns + y] = sum;
+    C[x * numBColumns + y] = sum;
   }
 }
 
@@ -28,7 +28,7 @@ void gemmCPU(DataType *A, DataType *B, DataType *C, int numARows,int numAColumns
       for (int k = 0; k < numAColumns; k++) {
         sum += A[i * numAColumns + k] * B[k * numBColumns + j];
       }
-      C[i * numAColumns + j] = sum;
+      C[i * numBColumns + j] = sum;
     }
   }
 }
