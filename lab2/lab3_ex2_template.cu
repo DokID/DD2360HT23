@@ -150,9 +150,11 @@ int main(int argc, char **argv) {
   // int no_of_blocks = (int) ceil(double(inputLength) / double(threads_per_block));
 
   dim3 block(32, 32);
-  dim3 grid(ceil((double) numARows / (double) 32), ceil((double) numBColumns / (double) 32));
+  dim3 grid((int) ceil(double(numARows) / double(32)), (int) ceil(double(numBColumns) / double(32)));
 
   printf("\nRunning kernel...\n");
+  printf("Grid dimensions: (%d,%d)\n", grid.x, grid.y);
+  printf("Block dimensions: (%d,%d)\n", block.x, block.y);
 
   //@@ Launch the GPU Kernel here
   starTimer();
