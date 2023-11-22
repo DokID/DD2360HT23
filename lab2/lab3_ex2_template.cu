@@ -27,12 +27,28 @@ int main(int argc, char **argv) {
   int numCRows;
   int numCColumns;
 
-  //@@ Insert code below to read in numARows, numAColumns, numBColumns from args
+  //@@ Insert code below to read in numARows, numAColumns, 
+  numARows = std::stoi(argv[1], nullptr);   
+  numAColumns = std::stoi(argv[2], nullptr);
+  numBRows = std::stoi(argv[3], nullptr);   
+  numBColumns = std::stoi(argv[4], nullptr);
+  numCRows = std::stoi(argv[5], nullptr);
+  numCColumns = std::stoi(argv[6], nullptr);
 
   printf("Input matrix dim (%d x %d) (%d x %d) (%d x %d)\n", numARows, numAColumns, numBRows, numBColumns, numCRows, numCColumns);
+
+  // check dims match
+  if !((numARows == numCRows) && (numBColumns == numCColumns) && (numAColumns == numBRows)) {
+    fprintf(stderr, "Input dim mismatch.\n");
+    return -1;
+  }
   
   //@@ Insert code below to allocate Host memory for input and output
-
+  // index by offset = i + numAColumns * j
+  DataType *hostA = (DataType *) malloc(numARows * numAColumns * sizeof(DataType));
+  // index by 
+  DataType **hostA = (DataType **) malloc(numARows * sizeof(DataType *));
+  for(int i = 0; i < numARows; i++) hostA[i] = (DataType *)malloc(numAColumns * sizeof(DataType));
   
   //@@ Insert code below to initialize hostA and hostB to random numbers, and create reference result in CPU
 
