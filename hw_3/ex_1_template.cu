@@ -13,17 +13,17 @@
 __global__ void histogram_kernel(DataType *input, DataType *bins, DataType num_elements, DataType num_bins) {
 
   const int idx = threadIdx.x + blockDim.x * blockIdx.x;
-  if (idx >= num_elements) return;
 
 //@@ Insert code below to compute histogram of input using shared memory and atomics
   __shared__ DataType s_bins[NUM_BINS];
-  atomicAdd(&s_bins[input[idx]], 1);
+  if (idx < num_elements) {
+    atomicAdd(&s_bins[input[idx]], 1);
+  }
   __syncthreads();
 
-  if (threadIdx.x == 0) {
-    for (int i = 0; i < num_bins; i++) {
-      atomicAdd(&bins[i], atomicExch(&s_bins[i], 0));
-    }
+  int share = ((int)num_bins/blockDim.x); // if blockDim.x == 1024
+  for (int i = share*threadIdx.x ; i < share*threadIdx.x + share ; i++) {
+    atomicAdd(&bins[i], atomicExch(&s_bins[i], 0));
   }
 }
 
