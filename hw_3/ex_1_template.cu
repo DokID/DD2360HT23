@@ -55,7 +55,7 @@ int calculateDiff(DataType *host_bins, DataType *device_bins, DataType num_bins)
   for (int i = 0; i < num_bins; i++) {
     if (host_bins[i] != device_bins[i]) {
       misses += 1;
-      printf("Results differ at %d: Host: %lu; Device: %lu\n", i, host_bins[i], device_bins[i]);
+      printf("Results differ at %d: Host: %u; Device: %u\n", i, host_bins[i], device_bins[i]);
       flag = 1;
     }
   }
