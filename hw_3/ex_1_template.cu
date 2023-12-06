@@ -6,7 +6,7 @@
 #include <math.h>
 
 #define NUM_BINS 4096
-#define MAX_INPUT_LENGTH 1 << 32;
+#define MAX_INPUT_LENGTH (unsigned long)1 << 32
 #define MAX_SATURATION 127
 #define DataType unsigned int
 
@@ -55,7 +55,7 @@ int calculateDiff(DataType *host_bins, DataType *device_bins, DataType num_bins)
   for (int i = 0; i < num_bins; i++) {
     if (host_bins[i] != device_bins[i]) {
       misses += 1;
-      printf("Results differ at %d: Host: %lu; Device: %lu\n", i, host_bins[i], device_bins[i]);
+      printf("Results differ at %d: Host: %u; Device: %u\n", i, host_bins[i], device_bins[i]);
       flag = 1;
     }
   }
@@ -66,7 +66,7 @@ int calculateDiff(DataType *host_bins, DataType *device_bins, DataType num_bins)
 
 int main(int argc, char **argv) {
   
-  int inputLength;
+  unsigned long inputLength;
   DataType *hostInput;
   DataType *hostBins;
   DataType *resultRef;
@@ -74,7 +74,12 @@ int main(int argc, char **argv) {
   DataType *deviceBins;
 
   //@@ Insert code below to read in inputLength from args
-  inputLength = std::stoi(argv[1], nullptr);
+  inputLength = std::stoul(argv[1], nullptr);
+
+  if(inputLength > MAX_INPUT_LENGTH) {
+    fprintf(stderr, "Input length exceeds maximum limit.\nLimit: %lu; Input Length: %lu", MAX_INPUT_LENGTH, inputLength);
+    exit(1);
+  }
   
   //@@ Insert code below to allocate Host memory for input and output
   hostInput = (DataType*) malloc(inputLength * sizeof(DataType));
