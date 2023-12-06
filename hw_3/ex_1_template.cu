@@ -17,12 +17,12 @@ __global__ void histogram_kernel(DataType *input, DataType *bins, DataType num_e
 
 //@@ Insert code below to compute histogram of input using shared memory and atomics
   __shared__ DataType s_bins[NUM_BINS];
-  atomicAdd(&s_bins[idx], 1);
+  atomicAdd(&s_bins[input[idx]], 1);
   __syncthreads();
 
-  if (idx == 0) {
+  if (threadIdx.x == 0) {
     for (int i = 0; i < num_bins; i++) {
-      atomicAdd(&bins[i], s_bins[i]);
+      atomicAdd(&bins[i], atomicExch(&s_bins[i], 0));
     }
   }
 }
@@ -51,13 +51,15 @@ void histogram_CPU(DataType *input, DataType *bins, DataType num_elements, DataT
 
 int calculateDiff(DataType *host_bins, DataType *device_bins, DataType num_bins) {
   int flag = 0;
+  int misses = 0;
   for (int i = 0; i < num_bins; i++) {
     if (host_bins[i] != device_bins[i]) {
-      printf("Results differ at %d: Host: %lu; Device: %lu", i, host_bins[i], device_bins[i]);
+      misses += 1;
+      printf("Results differ at %d: Host: %lu; Device: %lu\n", i, host_bins[i], device_bins[i]);
       flag = 1;
     }
   }
-
+  printf("\nMiss rate: %d / %d\n", misses, num_bins);
   return flag;
 }
 
@@ -73,8 +75,6 @@ int main(int argc, char **argv) {
 
   //@@ Insert code below to read in inputLength from args
   inputLength = std::stoi(argv[1], nullptr);
-
-  //printf("The input length is %d\n", inputLength);
   
   //@@ Insert code below to allocate Host memory for input and output
   hostInput = (DataType*) malloc(inputLength * sizeof(DataType));
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
   cudaMemcpy(hostBins, deviceBins, NUM_BINS * sizeof(DataType), cudaMemcpyDeviceToHost);
 
   //@@ Insert code below to compare the output with the reference
-  printf("\n Results match: %s\n", calculateDiff(resultRef, hostBins, NUM_BINS) ? "false" : "true");
+  printf("Results match: %s\n", calculateDiff(resultRef, hostBins, NUM_BINS) ? "false" : "true");
 
   //@@ Free the GPU memory here
   cudaFree(deviceInput);
