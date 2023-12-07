@@ -72,6 +72,81 @@ void particle_deallocate(struct particles* part)
     delete[] part->q;
 }
 
+/**
+ * Clones the content of a Particles object in host memory to a
+ * Particles object in device memory.
+*/
+void device_particle_deepcopy(struct particles* hostPart, struct particles* devicePart) {
+    // set species ID
+    devicePart->species_ID = hostPart->species_ID;
+    // number of particles
+    devicePart->nop = hostPart->nop;
+    // maximum number of particles
+    devicePart->npmax = hostPart->npmax;
+    
+    devicePart->NiterMover = hostPart->NiterMover;
+    devicePart->n_sub_cycles = hostPart->n_sub_cycles;
+    
+    // particles per cell
+    devicePart->npcelx = hostPart->npcelx;
+    devicePart->npcely = hostPart->npcely;
+    devicePart->npcelz = hostPart->npcelz;
+    devicePart->npcel = hostPart->npcel;
+    
+    // cast it to required precision
+    devicePart->qom = (FPpart) hostPart->qom;
+    
+    long npmax = hostPart->npmax;
+    
+    // initialize drift and thermal velocities
+    // drift
+    devicePart->u0 = hostPart->u0;
+    devicePart->v0 = hostPart->v0;
+    devicePart->w0 = hostPart->w0;
+    // thermal
+    devicePart->uth = hostPart->uth;
+    devicePart->vth = hostPart->vth;
+    devicePart->wth = hostPart->wth;
+    
+    
+    ///////////////////////////////////////////
+    /// ALLOCATION PARTICLE ARRAYS ON DEVICE///
+    ///////////////////////////////////////////
+    cudaMalloc(&devicePart->x, npmax * sizeof(FPpart));
+    cudaMemcpy(devicePart->x, hostPart->x, npmax * sizeof(FPpart), cudaMemcpyHostToDevice);
+
+    cudaMalloc(&devicePart->y, npmax * sizeof(FPpart));
+    cudaMemcpy(devicePart->y, hostPart->y, npmax * sizeof(FPpart), cudaMemcpyHostToDevice);
+
+    cudaMalloc(&devicePart->z, npmax * sizeof(FPpart));
+    cudaMemcpy(devicePart->z, hostPart->z, npmax * sizeof(FPpart), cudaMemcpyHostToDevice);
+
+    //// allocate velocity
+    cudaMalloc(&devicePart->u, npmax * sizeof(FPpart));
+    cudaMemcpy(devicePart->u, hostPart->u, npmax * sizeof(FPpart), cudaMemcpyHostToDevice);
+
+    cudaMalloc(&devicePart->v, npmax * sizeof(FPpart));
+    cudaMemcpy(devicePart->v, hostPart->v, npmax * sizeof(FPpart), cudaMemcpyHostToDevice);
+
+    cudaMalloc(&devicePart->w, npmax * sizeof(FPpart));
+    cudaMemcpy(devicePart->w, hostPart->w, npmax * sizeof(FPpart), cudaMemcpyHostToDevice);
+    
+    //// allocate charge = q * statistical weight
+    cudaMalloc(&devicePart->q, npmax * sizeof(FPpart));
+    cudaMemcpy(devicePart->q, hostPart->q, npmax * sizeof(FPpart), cudaMemcpyHostToDevice);
+
+    // copy devicePart to device
+    particles* deviceMemSegment;
+    particles* tmp;
+    cudaMalloc(&deviceMemSegment, sizeof(particles));
+    cudaMemcpy(deviceMemSegment, devicePart, sizeof(particles), cudaMemcpyHostToDevice);
+
+    // do a classic three way switcheroo
+    tmp = devicePart;
+    devicePart = deviceMemSegment;
+    free(tmp);
+}
+
 __global__ void mover_PC_kernel(
     struct particles* part, 
     struct EMfield* field, 
