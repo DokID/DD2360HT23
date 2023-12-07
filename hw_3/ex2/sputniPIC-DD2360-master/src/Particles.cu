@@ -178,7 +178,7 @@ __global__ void mover_PC_kernel(
     
     int i = threadIdx.x + blockDim.x * blockIdx.x;
     if (i >= part->nop) return;
-    
+
     // start subcycling
     for (int i_sub=0; i_sub <  n_sub_cycles; i_sub++){
     // move each particle with new fields
@@ -249,7 +249,7 @@ __global__ void mover_PC_kernel(
         //////////
         //////////
         ////////// BC
-                                    
+
         // X-DIRECTION: BC particles
         if (part->x[i] > grd->Lx){
             if (param->PERIODICX==true){ // PERIODIC
@@ -259,7 +259,7 @@ __global__ void mover_PC_kernel(
                 part->x[i] = 2*grd->Lx - part->x[i];
             }
         }
-                                                                    
+
         if (part->x[i] < 0){
             if (param->PERIODICX==true){ // PERIODIC
                 part->x[i] = part->x[i] + grd->Lx;
@@ -268,7 +268,6 @@ __global__ void mover_PC_kernel(
                 part->x[i] = -part->x[i];
             }
         }
-            
         
         // Y-DIRECTION: BC particles
         if (part->y[i] > grd->Ly){
@@ -279,7 +278,7 @@ __global__ void mover_PC_kernel(
                 part->y[i] = 2*grd->Ly - part->y[i];
             }
         }
-                                                                    
+
         if (part->y[i] < 0){
             if (param->PERIODICY==true){ // PERIODIC
                 part->y[i] = part->y[i] + grd->Ly;
@@ -288,7 +287,7 @@ __global__ void mover_PC_kernel(
                 part->y[i] = -part->y[i];
             }
         }
-                                                                    
+
         // Z-DIRECTION: BC particles
         if (part->z[i] > grd->Lz){
             if (param->PERIODICZ==true){ // PERIODIC
@@ -298,7 +297,7 @@ __global__ void mover_PC_kernel(
                 part->z[i] = 2*grd->Lz - part->z[i];
             }
         }
-                                                                    
+
         if (part->z[i] < 0){
             if (param->PERIODICZ==true){ // PERIODIC
                 part->z[i] = part->z[i] + grd->Lz;
@@ -307,21 +306,13 @@ __global__ void mover_PC_kernel(
                 part->z[i] = -part->z[i];
             }
         }
-                                                                    
-        
-        
-    //} // end of one particle
     } // end of subcycling
 }
 
 /** particle mover */
 int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd, struct parameters* param)
 {
-    struct particles* devicePart;
-    struct EMfield* deviceField;
-    struct grid* deviceGrd;
-    struct parameters* deviceParam;
-
+    
     // print species and subcycling
     std::cout << "***  MOVER with SUBCYCLYING "<< param->n_sub_cycles << " - species " << part->species_ID << " ***" << std::endl;
  
@@ -341,20 +332,10 @@ int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd
      * 4. Pass struct from 3 to kernel as single parameter
     */
 
-    FPpart *devicePart_x;
-    FPpart *devicePart_y;
-    FPpart *devicePart_z;
-    FPpart *devicePart_u;
-    FPpart *devicePart_v;
-    FPpart *devicePart_w;
+    particles* devicePart = new particles;
+    device_particle_deepcopy(part, devicePart);
+    
 
-    // allocate part -> x y z u v m
-    cudaMalloc(&devicePart_x, nop * sizeof(FPpart));
-    cudaMalloc(&devicePart_y, nop * sizeof(FPpart));
-    cudaMalloc(&devicePart_z, nop * sizeof(FPpart));
-    cudaMalloc(&devicePart_u, nop * sizeof(FPpart));
-    cudaMalloc(&devicePart_v, nop * sizeof(FPpart));
-    cudaMalloc(&devicePart_w, nop * sizeof(FPpart));
     
     FPpart *deviceField_Ex;
     FPpart *deviceField_Ey;
@@ -363,22 +344,12 @@ int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd
     FPpart *deviceField_Byn;
     FPpart *deviceField_Bzn;
 
-
-    cudaMalloc(&deviceField, sizeof(struct EMfield));
+    cudaMalloc(&deviceField, sizeof(EMfield));
     // allocate field -> Ex Ey Ez Bxn Byn Bzn
-    cudaMalloc(&deviceGrd, sizeof(struct grid));
-    cudaMalloc(&deviceParam, sizeof(struct parameters));
-    
-    part_SIZE = 0;
-    field_SIZE = 0;
-    grd_SIZE = 0;
-    param_SIZE = 0;
 
-    // copy to device
-    cudaMemcpy(devicePart, part, part_SIZE, cudaMemcpyHostToDevice);
-    cudaMemcpy(deviceField, field, field_SIZE, cudaMemcpyHostToDevice);
-    cudaMemcpy(deviceGrd, grd, grd_SIZE, cudaMemcpyHostToDevice);
-    cudaMemcpy(deviceParam, param, param_SIZE, cudaMemcpyHostToDevice);
+    cudaMalloc(&deviceGrd, sizeof(grid));
+    cudaMalloc(&deviceParam, sizeof(parameters));
+
 
     dim3 block(1024);
     dim3 grid((int) ceil ((double) part->nop/ (double) block.x));
@@ -386,6 +357,7 @@ int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd
     mover_PC_kernel<<<grid, block>>>(device_part, device_field, device_grd, device_param, dt_sub_cycling, dto2, qomdt2, part->n_sub_cycles);
 
     // read from device
+    //copy_particles_from_device(devicePart, partDeepCopy)
     
     // deallocate gpu memory
 
