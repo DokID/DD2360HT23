@@ -61,6 +61,18 @@ void particle_deallocate(struct particles*);
 /** particle mover */
 int mover_PC(struct particles*, struct EMfield*, struct grid*, struct parameters*);
 int mover_PC_GPU(struct particles*, struct EMfield*, struct grid*, struct parameters*);
+__global__ void mover_PC_SIMPLE(FPpart* device_part_x, FPpart* device_part_y, FPpart* device_part_z, 
+                                FPpart* device_part_u, FPpart* device_part_v, FPpart* device_part_w,
+                                int n_sub_cycles, int NiterMover, long nop, int species_ID,
+                                FPfield* device_field_flattened_Ex, FPfield* device_field_flattened_Ey, FPfield* device_field_flattened_Ez, 
+                                FPfield* device_field_flattened_Bxn, FPfield* device_field_flattened_Byn, FPfield* device_field_flattened_Bzn, 
+                                FPfield* device_grid_flattened_XN, FPfield* device_grid_flattened_YN, FPfield* device_grid_flattened_ZN,
+                                int grd_nxn, int grd_nyn, int grd_nzn,
+                                double grd_xStart, double grd_yStart, double grd_zStart, 
+                                double grd_invdx, double grd_invdy, double grd_invdz,
+                                double grd_Lx, double grd_Ly, double grd_Lz, double grd_invVOL,
+                                bool PERIODICX, bool PERIODICY, bool PERIODICZ,
+                                FPpart dt_sub_cycling, FPpart dto2, FPpart qomdt2);
 
 /** Interpolation Particle --> Grid: This is for species */
 void interpP2G(struct particles*, struct interpDensSpecies*, struct grid*);

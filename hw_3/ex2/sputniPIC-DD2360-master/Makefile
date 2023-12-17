@@ -4,13 +4,13 @@ CXX=g++
 CXXFLAGS=-std=c++11 -I./include -O3 -g -Xcompiler -Wall
 
 NVCC=nvcc
-ARCH=sm_30
-NVCCFLAGS= -I./include -arch=$(ARCH) -std=c++11 -O3 -g -Xcompiler -Wall --compiler-bindir=$(CXX)
+ARCH=sm_61
+NVCCFLAGS= -allow-unsupported-compiler -I./include -arch=$(ARCH) -std=c++11 -O3 -g -Xcompiler -Wall
 
 SRCDIR=src
 SRCS=$(shell find $(SRCDIR) -name '*.cu' -o -name '*.cpp')
 
-OBJDIR=src
+OBJDIR=objs
 OBJS=$(subst $(SRCDIR),$(OBJDIR), $(SRCS))
 OBJS:=$(subst .cpp,.o,$(OBJS))
 OBJS:=$(subst .cu,.o,$(OBJS))
@@ -28,7 +28,7 @@ ${BIN}:
 $(BIN)/$(TARGET): $(OBJS)
 	$(NVCC) $(NVCCFLAGS) $+ -o $@
 
-$(SRCDIR)/%.o: $(SRCDIR)/%.cu
+$(OBJDIR)/%.o: $(SRCDIR)/%.cu
 	$(NVCC) $(NVCCFLAGS) $< -c -o $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp

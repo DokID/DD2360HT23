@@ -74,6 +74,10 @@ int main(int argc, char **argv){
     // Initialization
     initGEM(&param,&grd,&field,&field_aux,part,ids);
     
+    bool use_gpu = true;
+    if (use_gpu) {
+        printf("\nUsing GPU\n");
+    }
     
     // **********************************************************//
     // **** Start the Simulation!  Cycle index start from 1  *** //
@@ -88,12 +92,21 @@ int main(int argc, char **argv){
         // set to zero the densities - needed for interpolation
         setZeroDensities(&idn,ids,&grd,param.ns);
         
-        
+        //printf("test\n");
+        //printf("index 0 0 0: %f\n", (float) grd.XN[2][2][2]);
+        //grd.XN_flat[2*grd.nyn*grd.nzn + 2*grd.nzn + 2] += grd.XN_flat[2*grd.nyn*grd.nzn + 2*grd.//nzn + 2];
+        //printf("index 0 0 0: %f\n", (float) grd.XN[2][2][2]);
         
         // implicit mover
         iMover = cpuSecond(); // start timer for mover
         for (int is=0; is < param.ns; is++)
-            mover_PC(&part[is],&field,&grd,&param);
+            if (use_gpu) {
+                printf("use gpu lol\n");
+                mover_PC_GPU(&part[is],&field,&grd,&param);
+                //mover_PC(&part[is],&field,&grd,&param);
+            } else {
+                mover_PC(&part[is],&field,&grd,&param);
+            }
         eMover += (cpuSecond() - iMover); // stop timer for mover
         
         
@@ -150,6 +163,8 @@ int main(int argc, char **argv){
     std::cout << "   Mover Time / Cycle   (s) = " << eMover/param.ncycles << std::endl;
     std::cout << "   Interp. Time / Cycle (s) = " << eInterp/param.ncycles  << std::endl;
     std::cout << "**************************************" << std::endl;
+
+    //TODO: compare gpu output to cpu
     
     // exit
     return 0;
