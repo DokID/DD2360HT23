@@ -5,7 +5,7 @@
 #include "input_array.h"
 
 /** read the inputfile given via the command line */
-void readInputFile(struct parameters*, int, char**);
+int readInputFile(struct parameters*, int, char**);
 
 /** Print Simulation Parameters */
 void printParameters(struct parameters*);

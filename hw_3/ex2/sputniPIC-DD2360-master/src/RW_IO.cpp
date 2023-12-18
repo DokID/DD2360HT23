@@ -9,11 +9,12 @@
 #include "EMfield.h"
 
 /** read the inputfile given via the command line */
-void readInputFile(struct parameters* param, int argc, char **argv)
+int readInputFile(struct parameters* param, int argc, char **argv)
 {
 
     // /////////////////////
     // Read the command line
+    int ret = 0;
     if (argc < 2) {
         std::cout << "Need to provide the input file for the sputniPIC simulation" << std::endl;
         exit (EXIT_FAILURE);
@@ -21,6 +22,12 @@ void readInputFile(struct parameters* param, int argc, char **argv)
     else if (argc < 3) {
         param->inputfile = argv[1];
         param->RESTART = false;
+        if (strcmp(argv[1], "comp") == 0) {
+            param->inputfile = argv[1];
+            param->RESTART = false;
+            ret = 2;
+            return ret;
+        }
     } else {
         if (strcmp(argv[1], "restart") == 0) {
             param->inputfile = argv[2];
@@ -29,6 +36,11 @@ void readInputFile(struct parameters* param, int argc, char **argv)
         else if (strcmp(argv[2], "restart") == 0) {
             param->inputfile = argv[1];
             param->RESTART = true;
+        }
+        else if (strcmp(argv[2], "gpu") == 0) {
+            param->inputfile = argv[1];
+            param->RESTART = false;
+            ret = 1;
         }
         else {
             std::cout << "Error when providing command line arguments" << std::endl;
@@ -277,6 +289,7 @@ void readInputFile(struct parameters* param, int argc, char **argv)
     param->SaveDirName = config.read < string > ("SaveDirName");
     param->RestartDirName = config.read < string > ("RestartDirName");
     
+    return ret;
 }
 
 /** Print Simulation Parameters */

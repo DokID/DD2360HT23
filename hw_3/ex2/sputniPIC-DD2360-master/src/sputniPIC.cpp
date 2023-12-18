@@ -36,7 +36,45 @@ int main(int argc, char **argv){
     // Read the inputfile and fill the param structure
     parameters param;
     // Read the input file name from command line
-    readInputFile(&param,argc,argv);
+    int conf = readInputFile(&param,argc,argv);
+    bool use_gpu = conf;
+    if (conf > 1) {
+        string files[] = {"B_10.vtk", "E_10.vtk", "rho_net_10.vtk", "rhoe_10.vtk", "rhoi_10.vtk", "sputniPICparameters.txt"};
+        string new_filename, old_filename, tmp1, tmp2;
+        int line;
+        bool match;
+        for (int i = 0; i < 6; i++) {
+            new_filename = "./data/";
+            new_filename += files[i];
+            old_filename = "./old/";
+            old_filename += files[i];
+            printf("Comparing \'%s\' to \'%s\'\n", new_filename.c_str(), old_filename.c_str());
+
+            std::ifstream newFile;
+            std::ifstream oldFile;
+
+            newFile.open(new_filename);
+            oldFile.open(old_filename);
+            if (newFile.fail() || oldFile.fail()) break;
+
+            line = 0;
+            match = true;
+            while(getline(newFile, tmp1)) {
+                line++;
+                getline(oldFile, tmp2);
+                if (tmp1 != tmp2) {
+                    printf("File mismatch on line %d!\n", line);
+                    printf("%s\nvs\n%s\n", tmp1.c_str(), tmp2.c_str());
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                printf("Files match!\n");
+            }
+        }
+        return 0;
+    }
     printParameters(&param);
     saveParameters(&param);
     
@@ -74,7 +112,7 @@ int main(int argc, char **argv){
     // Initialization
     initGEM(&param,&grd,&field,&field_aux,part,ids);
     
-    bool use_gpu = true;
+    //bool use_gpu = false;
     if (use_gpu) {
         printf("\nUsing GPU\n");
     }
@@ -101,7 +139,7 @@ int main(int argc, char **argv){
         iMover = cpuSecond(); // start timer for mover
         for (int is=0; is < param.ns; is++)
             if (use_gpu) {
-                printf("use gpu lol\n");
+                //printf("use gpu lol\n");
                 mover_PC_GPU(&part[is],&field,&grd,&param);
                 //mover_PC(&part[is],&field,&grd,&param);
             } else {
@@ -164,10 +202,7 @@ int main(int argc, char **argv){
     std::cout << "   Interp. Time / Cycle (s) = " << eInterp/param.ncycles  << std::endl;
     std::cout << "**************************************" << std::endl;
 
-    //TODO: compare gpu output to cpu
     
     // exit
     return 0;
 }
-
-

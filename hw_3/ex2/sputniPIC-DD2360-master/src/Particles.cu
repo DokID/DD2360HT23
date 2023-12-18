@@ -380,21 +380,21 @@ int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd
     //cudaMalloc(&deviceGrd, sizeof(grid));
     //cudaMalloc(&deviceParam, sizeof(parameters));
 
-    cudaMemcpy(device_part_x, part->x, part->nop * sizeof(FPpart), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_part_y, part->y, part->nop * sizeof(FPpart), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_part_z, part->z, part->nop * sizeof(FPpart), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_part_u, part->u, part->nop * sizeof(FPpart), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_part_v, part->v, part->nop * sizeof(FPpart), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_part_w, part->w, part->nop * sizeof(FPpart), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_field_flattened_Ex, field->Ex_flat, grd->nxn*grd->nyn*grd->nzn * sizeof(FPfield), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_field_flattened_Ey, field->Ey_flat, grd->nxn*grd->nyn*grd->nzn * sizeof(FPfield), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_field_flattened_Ez, field->Ez_flat, grd->nxn*grd->nyn*grd->nzn * sizeof(FPfield), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_field_flattened_Bxn, field->Bxn_flat, grd->nxn*grd->nyn*grd->nzn * sizeof(FPfield), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_field_flattened_Byn, field->Byn_flat, grd->nxn*grd->nyn*grd->nzn * sizeof(FPfield), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_field_flattened_Bzn, field->Bzn_flat, grd->nxn*grd->nyn*grd->nzn * sizeof(FPfield), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_grid_flattened_XN, grd->XN_flat, grd->nxn*grd->nyn*grd->nzn * sizeof(FPfield), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_grid_flattened_YN, grd->YN_flat, grd->nxn*grd->nyn*grd->nzn * sizeof(FPfield), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_grid_flattened_ZN, grd->ZN_flat, grd->nxn*grd->nyn*grd->nzn * sizeof(FPfield), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_part_x, part->x, (part->nop) * sizeof(FPpart), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_part_y, part->y, (part->nop) * sizeof(FPpart), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_part_z, part->z, (part->nop) * sizeof(FPpart), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_part_u, part->u, (part->nop) * sizeof(FPpart), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_part_v, part->v, (part->nop) * sizeof(FPpart), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_part_w, part->w, (part->nop) * sizeof(FPpart), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_field_flattened_Ex, (field->Ex_flat), (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_field_flattened_Ey, (field->Ey_flat), (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_field_flattened_Ez, (field->Ez_flat), (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_field_flattened_Bxn, (field->Bxn_flat), (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_field_flattened_Byn, (field->Byn_flat), (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_field_flattened_Bzn, (field->Bzn_flat), (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_grid_flattened_XN, (grd->XN_flat), (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_grid_flattened_YN, (grd->YN_flat), (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_grid_flattened_ZN, (grd->ZN_flat), (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyHostToDevice);
 
     cudaDeviceProp *prop = (cudaDeviceProp *) malloc (sizeof(cudaDeviceProp));
     cudaGetDeviceProperties(prop, 0);
@@ -419,12 +419,21 @@ int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd
 
     // read from device
     //copy_particles_from_device(devicePart, partDeepCopy)
-    cudaMemcpy(part->x, device_part_x, part->nop * sizeof(FPpart), cudaMemcpyDeviceToHost);
-    cudaMemcpy(part->y, device_part_y, part->nop * sizeof(FPpart), cudaMemcpyDeviceToHost);
-    cudaMemcpy(part->z, device_part_z, part->nop * sizeof(FPpart), cudaMemcpyDeviceToHost);
-    cudaMemcpy(part->u, device_part_u, part->nop * sizeof(FPpart), cudaMemcpyDeviceToHost);
-    cudaMemcpy(part->v, device_part_v, part->nop * sizeof(FPpart), cudaMemcpyDeviceToHost);
-    cudaMemcpy(part->w, device_part_w, part->nop * sizeof(FPpart), cudaMemcpyDeviceToHost);
+    cudaMemcpy(part->x, device_part_x, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
+    cudaMemcpy(part->y, device_part_y, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
+    cudaMemcpy(part->z, device_part_z, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
+    cudaMemcpy(part->u, device_part_u, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
+    cudaMemcpy(part->v, device_part_v, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
+    cudaMemcpy(part->w, device_part_w, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Ex_flat, device_field_flattened_Ex, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Ey_flat, device_field_flattened_Ey, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Ez_flat, device_field_flattened_Ez, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Bxn_flat, device_field_flattened_Bxn, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Byn_flat, device_field_flattened_Byn, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Bzn_flat, device_field_flattened_Bzn, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(grd->XN_flat, device_grid_flattened_XN, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(grd->YN_flat, device_grid_flattened_YN, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(grd->ZN_flat, device_grid_flattened_ZN, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
     
     // deallocate gpu memory
     cudaFree(device_part_x);
@@ -484,7 +493,7 @@ __global__ void mover_PC_SIMPLE(FPpart* device_part_x, FPpart* device_part_y, FP
 
     // IDX
     const int i = threadIdx.x + blockDim.x * blockIdx.x;
-    if ( !(i < nop) ) return;
+    if ( i >= nop ) return;
     // start subcycling
     for (int i_sub=0; i_sub <  n_sub_cycles; i_sub++){
         // move each particle with new fields
@@ -500,12 +509,12 @@ __global__ void mover_PC_SIMPLE(FPpart* device_part_x, FPpart* device_part_y, FP
                 iz = 2 +  int((device_part_z[i] - grd_zStart)*grd_invdz);
                 
                 // calculate weights
-                xi[0]   = device_part_x[i] - device_grid_flattened_XN[(ix - 1)*grd_nyn*grd_nzn + iy*grd_nzn + iz];     // flatten indices
-                eta[0]  = device_part_y[i] - device_grid_flattened_YN[ix*grd_nyn*grd_nzn + (iy - 1)*grd_nzn + iz];     // flatten indices
-                zeta[0] = device_part_z[i] - device_grid_flattened_ZN[ix*grd_nyn*grd_nzn + iy*grd_nzn + (iz - 1)];     // flatten indices
-                xi[1]   = device_grid_flattened_XN[ix*grd_nyn*grd_nzn + iy*grd_nzn + iz] - device_part_x[i];         // flatten indices
-                eta[1]  = device_grid_flattened_YN[ix*grd_nyn*grd_nzn + iy*grd_nzn + iz] - device_part_y[i];         // flatten indices
-                zeta[1] = device_grid_flattened_ZN[ix*grd_nyn*grd_nzn + iy*grd_nzn + iz] - device_part_z[i];         // flatten indices
+                xi[0]   = device_part_x[i] - device_grid_flattened_XN[(ix - 1) + iy*grd_nxn + iz*grd_nxn*grd_nyn];
+                eta[0]  = device_part_y[i] - device_grid_flattened_YN[ix + (iy - 1)*grd_nxn + iz*grd_nxn*grd_nyn];
+                zeta[0] = device_part_z[i] - device_grid_flattened_ZN[ix + iy*grd_nxn + (iz - 1)*grd_nxn*grd_nyn];
+                xi[1]   = device_grid_flattened_XN[ix + iy*grd_nxn + iz*grd_nxn*grd_nyn] - device_part_x[i];
+                eta[1]  = device_grid_flattened_YN[ix + iy*grd_nxn + iz*grd_nxn*grd_nyn] - device_part_y[i];
+                zeta[1] = device_grid_flattened_ZN[ix + iy*grd_nxn + iz*grd_nxn*grd_nyn] - device_part_z[i];
                 for (int ii = 0; ii < 2; ii++)
                     for (int jj = 0; jj < 2; jj++)
                         for (int kk = 0; kk < 2; kk++)
@@ -517,12 +526,12 @@ __global__ void mover_PC_SIMPLE(FPpart* device_part_x, FPpart* device_part_y, FP
                 for (int ii=0; ii < 2; ii++)
                     for (int jj=0; jj < 2; jj++)
                         for(int kk=0; kk < 2; kk++){
-                            Exl += weight[ii][jj][kk]*device_field_flattened_Ex[(ix- ii)*grd_nyn*grd_nzn + (iy -jj)*grd_nzn + (iz- kk)];   // flatten indices
-                            Eyl += weight[ii][jj][kk]*device_field_flattened_Ey[(ix- ii)*grd_nyn*grd_nzn + (iy -jj)*grd_nzn + (iz- kk)];   // flatten indices
-                            Ezl += weight[ii][jj][kk]*device_field_flattened_Ez[(ix- ii)*grd_nyn*grd_nzn + (iy -jj)*grd_nzn + (iz -kk)];   // flatten indices
-                            Bxl += weight[ii][jj][kk]*device_field_flattened_Bxn[(ix- ii)*grd_nyn*grd_nzn + (iy -jj)*grd_nzn + (iz -kk)];  // flatten indices
-                            Byl += weight[ii][jj][kk]*device_field_flattened_Byn[(ix- ii)*grd_nyn*grd_nzn + (iy -jj)*grd_nzn + (iz -kk)];  // flatten indices
-                            Bzl += weight[ii][jj][kk]*device_field_flattened_Bzn[(ix- ii)*grd_nyn*grd_nzn + (iy -jj)*grd_nzn + (iz -kk)];  // flatten indices
+                            Exl += weight[ii][jj][kk]*device_field_flattened_Ex[(ix - ii) + (iy - jj)*grd_nxn + (iz - kk)*grd_nxn*grd_nyn];
+                            Eyl += weight[ii][jj][kk]*device_field_flattened_Ey[(ix - ii) + (iy - jj)*grd_nxn + (iz - kk)*grd_nxn*grd_nyn];
+                            Ezl += weight[ii][jj][kk]*device_field_flattened_Ez[(ix - ii) + (iy - jj)*grd_nxn + (iz - kk)*grd_nxn*grd_nyn];
+                            Bxl += weight[ii][jj][kk]*device_field_flattened_Bxn[(ix - ii) + (iy - jj)*grd_nxn + (iz - kk)*grd_nxn*grd_nyn];
+                            Byl += weight[ii][jj][kk]*device_field_flattened_Byn[(ix - ii) + (iy - jj)*grd_nxn + (iz - kk)*grd_nxn*grd_nyn];
+                            Bzl += weight[ii][jj][kk]*device_field_flattened_Bzn[(ix - ii) + (iy - jj)*grd_nxn + (iz - kk)*grd_nxn*grd_nyn];
                         }
                 
                 // end interpolation
@@ -534,9 +543,9 @@ __global__ void mover_PC_SIMPLE(FPpart* device_part_x, FPpart* device_part_y, FP
                 wt= device_part_w[i] + qomdt2*Ezl;
                 udotb = ut*Bxl + vt*Byl + wt*Bzl;
                 // solve the velocity equation
-                uptilde = (ut+qomdt2*(vt*Bzl -wt*Byl + qomdt2*udotb*Bxl))*denom;
-                vptilde = (vt+qomdt2*(wt*Bxl -ut*Bzl + qomdt2*udotb*Byl))*denom;
-                wptilde = (wt+qomdt2*(ut*Byl -vt*Bxl + qomdt2*udotb*Bzl))*denom;
+                uptilde = (ut + qomdt2*(vt*Bzl -wt*Byl + qomdt2*udotb*Bxl))*denom;
+                vptilde = (vt + qomdt2*(wt*Bxl -ut*Bzl + qomdt2*udotb*Byl))*denom;
+                wptilde = (wt + qomdt2*(ut*Byl -vt*Bxl + qomdt2*udotb*Bzl))*denom;
                 // update position
                 device_part_x[i] = xptilde + uptilde*dto2;
                 device_part_y[i] = yptilde + vptilde*dto2;
@@ -544,6 +553,7 @@ __global__ void mover_PC_SIMPLE(FPpart* device_part_x, FPpart* device_part_y, FP
                 
                 
             } // end of iteration
+            __syncthreads();
             // update the final position and velocity
             device_part_u[i]= 2.0*uptilde - device_part_u[i];
             device_part_v[i]= 2.0*vptilde - device_part_v[i];
@@ -619,7 +629,7 @@ __global__ void mover_PC_SIMPLE(FPpart* device_part_x, FPpart* device_part_y, FP
             
         //} // end of one particle
     } // end of subcycling
-                                                                        
+    //__syncthreads();
     //return(0); // exit succcesfully
 } // end of the mover
 
