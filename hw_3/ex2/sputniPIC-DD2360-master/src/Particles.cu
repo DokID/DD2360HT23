@@ -421,8 +421,9 @@ int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd
     // read from device
     //copy_particles_from_device(devicePart, partDeepCopy)
     cudaError_t err = cudaMemcpy(part->x, device_part_x, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
-    printf("device to host: %s: %s\n", cudaGetErrorName(err), cudaGetErrorString(err));
+    if (err) printf("device to host: %s: %s\n", cudaGetErrorName(err), cudaGetErrorString(err));
 
+    cudaMemcpy(part->x, device_part_x, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
     cudaMemcpy(part->y, device_part_y, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
     cudaMemcpy(part->z, device_part_z, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
     cudaMemcpy(part->u, device_part_u, (part->nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
