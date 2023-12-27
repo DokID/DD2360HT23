@@ -3,24 +3,8 @@
 
 #include <stdio.h>
 #include <cuda.h>
-
+#include "kmeans_cuda_kernel.cuh"
 #include "kmeans.h"
-
-// FIXME: Make this a runtime selectable variable!
-#define ASSUMED_NR_CLUSTERS 32
-
-#define SDATA( index)      CUT_BANK_CHECKER(sdata, index)
-
-// FIXME: Convert to new Texture Object API
-// t_features has the layout dim0[points 0-m-1]dim1[ points 0-m-1]...
-// cudaTextureType1D = 0x01
-//texture<float, 1, cudaReadModeElementType> t_features;
-// t_features_flipped has the layout point0[dim 0-n-1]point1[dim 0-n-1]
-//texture<float, 1, cudaReadModeElementType> t_features_flipped;
-//texture<float, 1, cudaReadModeElementType> t_clusters;
-
-
-__constant__ float c_clusters[ASSUMED_NR_CLUSTERS*34];		/* constant memory for cluster centers */
 
 /* ----------------- invert_mapping() --------------------- */
 /* inverts data array from row-major to column-major.
