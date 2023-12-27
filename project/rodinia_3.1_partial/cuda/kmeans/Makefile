@@ -22,14 +22,17 @@ endif
 
 all: kmeans
 
-kmeans: cluster.o kmeans.o kmeans_clustering.o kmeans_cuda.o rmse.o
-	$(CC) $(CC_FLAGS) cluster.o kmeans.o kmeans_clustering.o kmeans_cuda.o rmse.o -o kmeans -L$(CUDA_LIB_DIR) -lcuda -lcudart -lm
+kmeans: cluster.o kmeans.o kmeans_clustering.o kmeans_cuda.o kmeans_cuda_kernel.o rmse.o
+	$(CC) $(CC_FLAGS) $^ -o kmeans -L$(CUDA_LIB_DIR) -lcuda -lcudart -lm
 
 %.o: %.c
 	$(CC) $(CC_FLAGS) $< -c
 
 kmeans_cuda.o: kmeans_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) -c kmeans_cuda.cu
+	$(NVCC) $(NVCC_FLAGS) kmeans_cuda.cu -c
+
+kmeans_cuda_kernel.o: kmeans_cuda_kernel.cu
+	$(NVCC) $(NVCC_FLAGS) kmeans_cuda_kernel.cu -c
 
 clean:
 	rm -f *.o *~ kmeans kmeans_cuda.linkinfo
