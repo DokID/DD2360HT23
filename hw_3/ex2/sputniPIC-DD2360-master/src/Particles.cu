@@ -567,7 +567,7 @@ __global__ void mover_PC_SIMPLE(FPpart* device_part_x, FPpart* device_part_y, FP
                     
                     
                 } // end of iteration
-                //__syncthreads();
+                __syncthreads();
                 // update the final position and velocity
                 device_part_u[i]= 2.0*uptilde - device_part_u[i];
                 device_part_v[i]= 2.0*vptilde - device_part_v[i];
@@ -643,7 +643,7 @@ __global__ void mover_PC_SIMPLE(FPpart* device_part_x, FPpart* device_part_y, FP
                 
             //} // end of one particle
         } // end of subcycling
-        //__syncthreads();
+        __syncthreads();
         //return(0); // exit succcesfully
     }
 } // end of the mover

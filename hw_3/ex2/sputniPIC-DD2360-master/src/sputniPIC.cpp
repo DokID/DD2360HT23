@@ -137,7 +137,7 @@ int main(int argc, char **argv){
         
         // implicit mover
         iMover = cpuSecond(); // start timer for mover
-        for (int is=0; is < param.ns; is++)
+        for (int is=0; is < param.ns; is++) {
             if (use_gpu) {
                 //printf("use gpu lol\n");
                 mover_PC_GPU(&part[is],&field,&grd,&param);
@@ -145,6 +145,7 @@ int main(int argc, char **argv){
             } else {
                 mover_PC(&part[is],&field,&grd,&param);
             }
+        }
         eMover += (cpuSecond() - iMover); // stop timer for mover
         
         
