@@ -151,6 +151,45 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
 	int delta = 0;			/* if point has moved */
 	int i,j;				/* counters */
 
+    cudaResourceDesc resDescFeatures{};
+    cudaResourceDesc resDescFeaturesFlipped{};
+    cudaResourceDesc resDescClusters{};
+
+    memset(&resDescFeatures, 0, sizeof resDescFeatures);
+    resDescFeatures.resType = cudaResourceTypeLinear;
+    resDescFeatures.res.linear.devPtr = feature_d;
+    resDescFeatures.res.linear.desc.f = cudaChannelFormatKindFloat;
+    resDescFeatures.res.linear.desc.x = 8;  // Default value for cudaChannelFormatDescription
+    resDescFeatures.res.linear.sizeInBytes = npoints * nfeatures * sizeof(float);
+
+    memset(&resDescFeaturesFlipped, 0, sizeof resDescFeaturesFlipped);
+    resDescFeaturesFlipped.resType = cudaResourceTypeLinear;
+    resDescFeaturesFlipped.res.linear.devPtr = feature_flipped_d;
+    resDescFeaturesFlipped.res.linear.desc.f = cudaChannelFormatKindFloat;
+    resDescFeaturesFlipped.res.linear.desc.x = 8;  // Default value for cudaChannelFormatDescription
+    resDescFeaturesFlipped.res.linear.sizeInBytes = npoints * nfeatures * sizeof(float);
+
+    memset(&resDescClusters, 0, sizeof resDescClusters);
+    resDescClusters.resType = cudaResourceTypeLinear;
+    resDescClusters.res.linear.devPtr = clusters_d;
+    resDescClusters.res.linear.desc.f = cudaChannelFormatKindFloat;
+    resDescClusters.res.linear.desc.x = 8;  // Default value for cudaChannelFormatDescription
+    resDescClusters.res.linear.sizeInBytes = nclusters * nfeatures * sizeof(float);
+
+    cudaTextureDesc texDesc{};
+    memset(&texDesc, 0, sizeof texDesc);
+    texDesc.readMode = cudaReadModeElementType;
+    texDesc.filterMode = cudaFilterModePoint;
+    texDesc.normalizedCoords = false;
+
+    cudaTextureObject_t t_features = 0;
+    cudaTextureObject_t t_features_flipped = 0;
+    cudaTextureObject_t t_clusters = 0;
+    cudaCreateTextureObject(&t_features, &resDescFeatures, &texDesc, nullptr);
+    cudaCreateTextureObject(&t_features_flipped, &resDescFeatures, &texDesc, nullptr);
+    cudaCreateTextureObject(&t_clusters, &resDescFeatures, &texDesc, nullptr);
+
+
 
 	cudaSetDevice(1);
 
@@ -161,29 +200,32 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
 	cudaMemcpy(clusters_d, clusters[0], nclusters*nfeatures*sizeof(float), cudaMemcpyHostToDevice);
 
 	/* set up texture */
-    cudaChannelFormatDesc chDesc0 = cudaCreateChannelDesc<float>();
-    t_features.filterMode = cudaFilterModePoint;   
-    t_features.normalized = false;
-    t_features.channelDesc = chDesc0;
+    // FIXME: Convert to new Texture Object API
+//    cudaChannelFormatDesc chDesc0 = cudaCreateChannelDesc<float>();
+//    t_features.filterMode = cudaFilterModePoint;
+//    t_features.normalized = false;
+//    t_features.channelDesc = chDesc0;
+//
+//	if(cudaBindTexture(NULL, &t_features, feature_d, &chDesc0, npoints*nfeatures*sizeof(float)) != CUDA_SUCCESS)
+//        printf("Couldn't bind features array to texture!\n");
 
-	if(cudaBindTexture(NULL, &t_features, feature_d, &chDesc0, npoints*nfeatures*sizeof(float)) != CUDA_SUCCESS)
-        printf("Couldn't bind features array to texture!\n");
+    //// FIXME: Convert to new Texture Object API
+	//cudaChannelFormatDesc chDesc1 = cudaCreateChannelDesc<float>();
+    //t_features_flipped.filterMode = cudaFilterModePoint;
+    //t_features_flipped.normalized = false;
+    //t_features_flipped.channelDesc = chDesc1;
 
-	cudaChannelFormatDesc chDesc1 = cudaCreateChannelDesc<float>();
-    t_features_flipped.filterMode = cudaFilterModePoint;   
-    t_features_flipped.normalized = false;
-    t_features_flipped.channelDesc = chDesc1;
+	//if(cudaBindTexture(NULL, &t_features_flipped, feature_flipped_d, &chDesc1, npoints*nfeatures*sizeof(float)) != CUDA_SUCCESS)
+    //    printf("Couldn't bind features_flipped array to texture!\n");
 
-	if(cudaBindTexture(NULL, &t_features_flipped, feature_flipped_d, &chDesc1, npoints*nfeatures*sizeof(float)) != CUDA_SUCCESS)
-        printf("Couldn't bind features_flipped array to texture!\n");
+    //// FIXME: Convert to new Texture Object API
+    //cudaChannelFormatDesc chDesc2 = cudaCreateChannelDesc<float>();
+    //t_clusters.filterMode = cudaFilterModePoint;
+    //t_clusters.normalized = false;
+    //t_clusters.channelDesc = chDesc2;
 
-	cudaChannelFormatDesc chDesc2 = cudaCreateChannelDesc<float>();
-    t_clusters.filterMode = cudaFilterModePoint;   
-    t_clusters.normalized = false;
-    t_clusters.channelDesc = chDesc2;
-
-	if(cudaBindTexture(NULL, &t_clusters, clusters_d, &chDesc2, nclusters*nfeatures*sizeof(float)) != CUDA_SUCCESS)
-        printf("Couldn't bind clusters array to texture!\n");
+	//if(cudaBindTexture(NULL, &t_clusters, clusters_d, &chDesc2, nclusters*nfeatures*sizeof(float)) != CUDA_SUCCESS)
+    //    printf("Couldn't bind clusters array to texture!\n");
 
 	/* copy clusters to constant memory */
 	cudaMemcpyToSymbol("c_clusters",clusters[0],nclusters*nfeatures*sizeof(float),0,cudaMemcpyHostToDevice);
@@ -202,7 +244,9 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
                                       membership_d,
                                       clusters_d,
 									  block_clusters_d,
-									  block_deltas_d);
+									  block_deltas_d,
+                                      t_features,
+                                      t_features_flipped);
 
 	cudaThreadSynchronize();
 
