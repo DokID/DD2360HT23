@@ -43,6 +43,12 @@ int main(int argc, char **argv){
         string new_filename, old_filename, tmp1, tmp2;
         int line;
         bool match;
+        int fails;
+        float sum;
+        float tmp1f;
+        float tmp2f;
+        float diff;
+        float TOL = 1e-6;
         for (int i = 0; i < 6; i++) {
             new_filename = "./data/";
             new_filename += files[i];
@@ -59,18 +65,31 @@ int main(int argc, char **argv){
 
             line = 0;
             match = true;
+            fails = 0;
+            sum = 0.0;
             while(getline(newFile, tmp1)) {
                 line++;
                 getline(oldFile, tmp2);
                 if (tmp1 != tmp2) {
-                    printf("File mismatch on line %d!\n", line);
-                    printf("%s\nvs\n%s\n", tmp1.c_str(), tmp2.c_str());
-                    match = false;
-                    break;
+                    tmp1f = atof(tmp1.c_str());
+                    tmp2f = atof(tmp2.c_str());
+                    diff = abs(tmp1f - tmp2f);
+                    if (diff > TOL) {
+                        if (fails == 0) {
+                            printf("File mismatch on lines:\n");
+                        }
+                        printf("%d: %s should be %s\n", line, tmp1.c_str(), tmp2.c_str());
+                        sum += diff;
+                        match = false;
+                        fails++;
+                        //break;
+                    }
                 }
             }
             if (match) {
                 printf("Files match!\n");
+            } else {
+                printf("%d mismatches, average error: %f\n", fails, (sum / ((float) fails)));
             }
         }
         return 0;
@@ -137,7 +156,7 @@ int main(int argc, char **argv){
         
         // implicit mover
         iMover = cpuSecond(); // start timer for mover
-        for (int is=0; is < param.ns; is++)
+        for (int is=0; is < param.ns; is++) {
             if (use_gpu) {
                 //printf("use gpu lol\n");
                 mover_PC_GPU(&part[is],&field,&grd,&param);
@@ -145,6 +164,12 @@ int main(int argc, char **argv){
             } else {
                 mover_PC(&part[is],&field,&grd,&param);
             }
+            
+            //for (int i = 0; i < 10; i++) {
+            //    printf("%f ", part->y[i]);
+            //}
+            //printf("\n");
+        }
         eMover += (cpuSecond() - iMover); // stop timer for mover
         
         

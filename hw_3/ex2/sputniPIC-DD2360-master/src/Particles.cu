@@ -325,15 +325,6 @@ int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd
     long nop = part->nop;
     //long npmax = part->npmax;
     
-    // print sizes of Ex
-    //printf("Ex dims: [%d, %d, %d]\n", grd->nxn, grd->nyn, grd->nzn);
-    //printf("Ex[150, 70, 2] 3d:%f, flat:%f\n", field->Ex[150][70][2], field->Ex_flat[150*grd->nyn*grd->nzn + 70*grd->nzn + 2]);
-    //printf("set some value 5.0\n");
-    //field->Ex[150][70][2] = 5.0;
-    //printf("Ex[150, 70, 2] 3d:%f, flat:%f\n", field->Ex[150][70][2], field->Ex_flat[150*grd->nyn*grd->nzn + 70*grd->nzn + 2]);
-    //printf("set some value 7.0\n");
-    //field->Ex_flat[150*grd->nyn*grd->nzn + 70*grd->nzn + 2] = 7.0;
-    //printf("Ex[150, 70, 2] 3d:%f, flat:%f\n", field->Ex[150][70][2], field->Ex_flat[150*grd->nyn*grd->nzn + 70*grd->nzn + 2]);
     // allocate gpu memory
 
     /**
@@ -417,28 +408,23 @@ int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd
     dim3 grid((int) ceil ((double) part->nop/ (double) block.x));
 
     //mover_PC_kernel<<<grid, block>>>(device_part, device_field, device_grd, device_param, dt_sub_cycling, dto2, qomdt2, part->n_sub_cycles);
-    mover_PC_SIMPLE<<<grid, block>>>(device_part_x, device_part_z, device_part_y, 
-                    device_part_u, device_part_v, device_part_w,
-                    part->n_sub_cycles, part->NiterMover, part->nop, part->species_ID,
-                    device_field_flattened_Ex, device_field_flattened_Ey, device_field_flattened_Ez, 
-                    device_field_flattened_Bxn, device_field_flattened_Byn, device_field_flattened_Bzn, 
-                    device_grid_flattened_XN, device_grid_flattened_YN, device_grid_flattened_ZN,
-                    grd->nxn, grd->nyn, grd->nzn,
-                    grd->xStart, grd->yStart, grd->zStart, 
-                    grd->invdx, grd->invdy, grd->invdz,
-                    grd->Lx, grd->Ly, grd->Lz, grd->invVOL,
-                    grd->PERIODICX, grd->PERIODICY, grd->PERIODICZ, 
-                    dt_sub_cycling,  dto2,  qomdt2);
+    mover_PC_SIMPLE<<<grid, block>>>(device_part_x, device_part_y, device_part_z, 
+                                     device_part_u, device_part_v, device_part_w,
+                                     part->n_sub_cycles, part->NiterMover, part->nop, part->species_ID,
+                                     device_field_flattened_Ex, device_field_flattened_Ey, device_field_flattened_Ez, 
+                                     device_field_flattened_Bxn, device_field_flattened_Byn, device_field_flattened_Bzn, 
+                                     device_grid_flattened_XN, device_grid_flattened_YN, device_grid_flattened_ZN,
+                                     grd->nxn, grd->nyn, grd->nzn,
+                                     grd->xStart, grd->yStart, grd->zStart, 
+                                     grd->invdx, grd->invdy, grd->invdz,
+                                     grd->Lx, grd->Ly, grd->Lz, grd->invVOL,
+                                     grd->PERIODICX, grd->PERIODICY, grd->PERIODICZ, 
+                                     dt_sub_cycling,  dto2,  qomdt2);
     cudaDeviceSynchronize();
     
     // read from device
 
-    //printf("cudaMemcpy to host \n");
-    //printf("before: %f\n", part->x[0]);
-    err = cudaMemcpy(part->x, device_part_x, (nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
-    //printf("device to host?: %s: %s\n", cudaGetErrorName(err), cudaGetErrorString(err));
-    //printf("after: %f\n", part->x[0]);
-
+    cudaMemcpy(part->x, device_part_x, (nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
     cudaMemcpy(part->y, device_part_y, (nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
     cudaMemcpy(part->z, device_part_z, (nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
     cudaMemcpy(part->u, device_part_u, (nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
@@ -538,7 +524,7 @@ __global__ void mover_PC_SIMPLE(FPpart* device_part_x, FPpart* device_part_y, FP
                     iz = 2 +  int((device_part_z[i] - grd_zStart)*grd_invdz);
                     
                     // calculate weights
-                    xi[0]   = device_part_x[i] - device_grid_flattened_XN[(ix*grd_nyn*grd_nzn - 1) + iy*grd_nzn + iz];
+                    xi[0]   = device_part_x[i] - device_grid_flattened_XN[(ix - 1)*grd_nyn*grd_nzn + iy*grd_nzn + iz];
                     eta[0]  = device_part_y[i] - device_grid_flattened_YN[ix*grd_nyn*grd_nzn + (iy - 1)*grd_nzn + iz];
                     zeta[0] = device_part_z[i] - device_grid_flattened_ZN[ix*grd_nyn*grd_nzn + iy*grd_nzn + (iz - 1)];
                     xi[1]   = device_grid_flattened_XN[ix*grd_nyn*grd_nzn + iy*grd_nzn + iz] - device_part_x[i];
