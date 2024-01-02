@@ -431,17 +431,17 @@ int mover_PC_GPU(struct particles* part, struct EMfield* field, struct grid* grd
     cudaMemcpy(part->v, device_part_v, (nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
     cudaMemcpy(part->w, device_part_w, (nop) * sizeof(FPpart), cudaMemcpyDeviceToHost);
 
-    cudaMemcpy(field->Ex_flat, device_field_flattened_Ex, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
-    cudaMemcpy(field->Ey_flat, device_field_flattened_Ey, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
-    cudaMemcpy(field->Ez_flat, device_field_flattened_Ez, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Ex_flat, device_field_flattened_Ex, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Ey_flat, device_field_flattened_Ey, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Ez_flat, device_field_flattened_Ez, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
     
-    cudaMemcpy(field->Bxn_flat, device_field_flattened_Bxn, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
-    cudaMemcpy(field->Byn_flat, device_field_flattened_Byn, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
-    cudaMemcpy(field->Bzn_flat, device_field_flattened_Bzn, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Bxn_flat, device_field_flattened_Bxn, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Byn_flat, device_field_flattened_Byn, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(field->Bzn_flat, device_field_flattened_Bzn, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
     
-    cudaMemcpy(grd->XN_flat, device_grid_flattened_XN, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
-    cudaMemcpy(grd->YN_flat, device_grid_flattened_YN, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
-    cudaMemcpy(grd->ZN_flat, device_grid_flattened_ZN, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(grd->XN_flat, device_grid_flattened_XN, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(grd->YN_flat, device_grid_flattened_YN, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(grd->ZN_flat, device_grid_flattened_ZN, (grd->nxn)*(grd->nyn)*(grd->nzn) * sizeof(FPfield), cudaMemcpyDeviceToHost);
 
     // deallocate gpu memory
     cudaFree(device_part_x);

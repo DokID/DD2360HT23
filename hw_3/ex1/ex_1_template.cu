@@ -80,10 +80,11 @@ int main(int argc, char **argv) {
   hostInput = (DataType*) malloc(inputLength * sizeof(DataType));
   hostBins = (DataType*) malloc(NUM_BINS * sizeof(DataType));
   resultRef = (DataType*) malloc(NUM_BINS * sizeof(DataType));
+  memset(resultRef, 0, NUM_BINS);
   
   //@@ Insert code below to initialize hostInput to random numbers whose values range from 0 to (NUM_BINS - 1)
   for (int i = 0; i < inputLength; i++) {
-    hostInput[i] = (DataType)floor(((double)rand() / (double)RAND_MAX) * (double)(NUM_BINS - 1));
+    hostInput[i] = (DataType)floor(((double)rand() / (double)RAND_MAX) * (double)(NUM_BINS));
   }
 
   //@@ Insert code below to create reference result in CPU
@@ -106,6 +107,7 @@ int main(int argc, char **argv) {
   
   dim3 block1(threads_per_block);
   dim3 grid1((int)ceil((double)inputLength/(double)block1.x));
+  printf("max threads / block: %d\nblocks / grid: %d\n", block1.x, grid1.x);
 
   //@@ Launch the GPU Kernel here
   histogram_kernel<<<grid1, block1>>>(deviceInput, deviceBins, inputLength, NUM_BINS);
@@ -125,6 +127,15 @@ int main(int argc, char **argv) {
   //@@ Insert code below to compare the output with the reference
   printf("Results match: %s\n", calculateDiff(resultRef, hostBins, NUM_BINS) ? "false" : "true");
 
+  FILE *f;
+  f = fopen("vecadd_result.txt", "w");
+  for (int i = 0; i < NUM_BINS; i++) {
+    fprintf(f, "%d, %u\n", i, hostBins[i]);
+  }
+  fclose(f);
+
+  printf("Wrote bins to file \'vecadd_result.txt\'\n");
+
   //@@ Free the GPU memory here
   cudaFree(deviceInput);
   cudaFree(deviceBins);
@@ -133,7 +144,7 @@ int main(int argc, char **argv) {
   free(hostInput);
   free(hostBins);
   free(resultRef);
-
+  
   return 0;
 }
 
