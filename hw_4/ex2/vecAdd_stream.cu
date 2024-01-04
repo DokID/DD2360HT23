@@ -61,13 +61,6 @@ void stopTimer() {
 
 
 int main(int argc, char **argv) {
-  
-// 1. Divide an input vector into multiple segments of a given size (S_seg)
-
-// 2. Create 4 CUDA streams to copy asynchronously from host to GPU memory, perform vector addition on GPU, and copy back the results from GPU memory to host memory
-
-// 3. Add timers to compare the performance using different segment size by varying the value of S_seg. 
-
 
   int inputLength;
   int segmentLength;
@@ -85,17 +78,13 @@ int main(int argc, char **argv) {
   inputLength = std::stoi(argv[1], nullptr);
   segmentLength = std::stoi(argv[2], nullptr);
 
-  n_segments = (int)ceil(inputLength/segmentLength); // should probably be a whole number
-
-  //printf("The input length is %d\n", inputLength);
+  n_segments = (int)ceil(inputLength/segmentLength);
   
   //@@ Insert code below to allocate Host memory for input and output
   hostInput1 = (DataType*) malloc(inputLength * sizeof(DataType));
   hostInput2 = (DataType*) malloc(inputLength * sizeof(DataType));
   hostOutput = (DataType*) malloc(inputLength * sizeof(DataType));
   resultRef = (DataType*) malloc(inputLength * sizeof(DataType));
-
-  // printf("Initializing vectors...\n");
   
   //@@ Insert code below to initialize hostInput1 and hostInput2 to random numbers, and create reference result in CPU
   srand(time(0));
@@ -105,6 +94,7 @@ int main(int argc, char **argv) {
   }
 
   printf("\nRunning on CPU...\n");
+  
   starTimer();
   vecAddCPU(hostInput1, hostInput2, resultRef, inputLength);
   stopTimer();
@@ -118,43 +108,21 @@ int main(int argc, char **argv) {
   cudaMalloc(&deviceInput2, inputLength * sizeof(DataType));
   cudaMalloc(&deviceOutput, inputLength * sizeof(DataType));
 
-  // printf("Copying memory to device...\n");
-
-  //@@ Insert code to below to Copy memory to the GPU here <-- TIME THIS
-  //starTimer();
-  //cudaMemcpy(deviceInput1, hostInput1, inputLength * sizeof(DataType), cudaMemcpyHostToDevice);
-  //cudaMemcpy(deviceInput2, hostInput2, inputLength * sizeof(DataType), cudaMemcpyHostToDevice);
-  //stopTimer();
-
   //@@ Initialize the 1D grid and block dimensions here
-  // cudaDeviceProp *prop = (cudaDeviceProp *) malloc (sizeof(cudaDeviceProp));
-  // cudaGetDeviceProperties_v2(prop, 0);
   int threads_per_block = 32; // Set to warp size, just to keep it simple.
   int no_of_blocks = (int) ceil(double(segmentLength) / double(threads_per_block));
 
-
   printf("Streaming data...\n");
-
-  //@@ Launch the GPU Kernel here <-- TIME THIS
-  //starTimer();
-  //vecAdd<<<no_of_blocks, threads_per_block>>>(deviceInput1, deviceInput2, deviceOutput, inputLength);
-  //cudaDeviceSynchronize();
-  //stopTimer();
 
   int offset, s_id, last_seg_len;
   for (int i = 0; i < n_segments; i++) {
     offset = i * segmentLength;
     s_id = i % N_STREAMS;
-    // printf("Offset: %d\n", offset);
-    // printf("Stream id: %d\n", s_id);
+
     cudaMemcpyAsync(&deviceInput1[offset], &hostInput1[offset], segmentLength * sizeof(DataType), cudaMemcpyHostToDevice, streams[s_id]);
-    // printf("Copy 1 done.\n");
     cudaMemcpyAsync(&deviceInput2[offset], &hostInput2[offset], segmentLength * sizeof(DataType), cudaMemcpyHostToDevice, streams[s_id]);
-    // printf("Copy 2 done.\n");
     vecAdd<<<no_of_blocks, threads_per_block, 0, streams[s_id]>>>(&deviceInput1[offset], &deviceInput2[offset], &deviceOutput[offset], segmentLength);
-    // printf("Kernel invoked.\n");
     cudaMemcpyAsync(&hostOutput[offset], &deviceOutput[offset], segmentLength * sizeof(DataType), cudaMemcpyDeviceToHost, streams[s_id]);
-    // printf("Copy 3 done.\n");
   }
 
   // Last segment can be shorter than segmentLength, so we run a special sequence to avoid going out of bounds in GPU memory.
@@ -162,10 +130,6 @@ int main(int argc, char **argv) {
   offset = n_segments * segmentLength;
   s_id = n_segments % N_STREAMS;
   last_seg_len = inputLength - offset;
-
-  // printf("Offset: %d\n", offset);
-  // printf("Stream id: %d\n", s_id);
-  // printf("Final segment length: %d\n", last_seg_len);
   
   cudaMemcpyAsync(&deviceInput1[offset], &hostInput1[offset], last_seg_len * sizeof(DataType), cudaMemcpyHostToDevice, streams[s_id]);
   cudaMemcpyAsync(&deviceInput2[offset], &hostInput2[offset], last_seg_len * sizeof(DataType), cudaMemcpyHostToDevice, streams[s_id]);
@@ -173,13 +137,6 @@ int main(int argc, char **argv) {
   cudaMemcpyAsync(&hostOutput[offset], &deviceOutput[offset], last_seg_len * sizeof(DataType), cudaMemcpyDeviceToHost, streams[s_id]);
     
   printf("Streaming finished!\n");
-
-  // printf("\nCopying results to host...\n");
-
-  //@@ Copy the GPU memory back to the CPU here <-- TIME THIS
-  //starTimer();
-  //cudaMemcpy(hostOutput, deviceOutput, inputLength * sizeof(DataType), cudaMemcpyDeviceToHost);
-  //stopTimer();
 
   //@@ Insert code below to compare the output with the reference
   cudaDeviceSynchronize();  //Wait for all streams to finish before verifying result.
@@ -202,7 +159,6 @@ int main(int argc, char **argv) {
   free(hostOutput);
   free(resultRef);
   free(startTime);
-  //free(prop);
 
   return 0;
 }
