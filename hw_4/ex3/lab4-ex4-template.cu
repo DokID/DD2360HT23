@@ -44,7 +44,7 @@ void cputimer_start(){
 void cputimer_stop(const char* info){
   gettimeofday(&t_end, 0);
   double time = (1000000.0*(t_end.tv_sec-t_start.tv_sec) + t_end.tv_usec-t_start.tv_usec);
-  printf("Timing - %s. \t\tElasped %.0f microseconds \n", info, time);
+  printf("Timing - %s. \t\tElapsed %.0f microseconds \n", info, time);
 }
 
 // Initialize the sparse matrix needed for the heat time step
@@ -110,10 +110,18 @@ int main(int argc, char **argv) {
   // Calculate the number of non zero values in the sparse matrix. This number
   // is known from the structure of the sparse matrix
   nzv = 3 * dimX - 6;
+  printf("nzv: %d\n", nzv);
 
   //@@ Insert the code to allocate the temp, tmp and the sparse matrix
   //@@ arrays using Unified Memory
   cputimer_start();
+
+  cudaMallocManaged(&temp, nzv * sizeof(double));
+  cudaMallocManaged(&tmp, nzv * sizeof(double));
+
+  cudaMallocManaged(&A, nzv * sizeof(double)); // CSR values
+  cudaMallocManaged(&ARowPtr, nzv * sizeof(int)); // Row ptr
+  cudaMallocManaged(&AColIndx, nzv * sizeof(int)); // Column index
 
   cputimer_stop("Allocating device memory");
 
@@ -130,6 +138,24 @@ int main(int argc, char **argv) {
   matrixInit(A, ARowPtr, AColIndx, dimX, alpha);
   cputimer_stop("Initializing the sparse matrix on the host");
 
+  printf("A: [");
+  for (int i = 0; i < nzv - 1; i++) {
+  printf("%f, ", A[i]);
+  }
+  printf("%f]\n", A[nzv - 1]);
+
+  printf("ARowPtr: [");
+  for (int i = 0; i < nzv - 1; i++) {
+  printf("%d, ", ARowPtr[i]);
+  }
+  printf("%d]\n", ARowPtr[nzv - 1]);
+
+  printf("AColIndx: [");
+  for (int i = 0; i < nzv - 1; i++) {
+  printf("%d, ", AColIndx[i]);
+  }
+  printf("%d]\n", AColIndx[nzv - 1]);
+  
   //Initiliaze the boundary conditions for the heat equation
   cputimer_start();
   memset(temp, 0, sizeof(double) * dimX);
@@ -137,15 +163,29 @@ int main(int argc, char **argv) {
   temp[dimX - 1] = tempRight;
   cputimer_stop("Initializing memory on the host");
 
+
+  int device = -1;
+  cudaGetDevice(&device);
   if (concurrentAccessQ) {
     cputimer_start();
-    //@@ Insert code to prefetch in Unified Memory asynchronously to the GPU
+    // Prefetch the data to the GPU
+    cudaMemPrefetchAsync(&temp, nzv * sizeof(double), device, NULL);
+    cudaMemPrefetchAsync(&tmp, nzv * sizeof(double), device, NULL);
+
+    cudaMemPrefetchAsync(&A, nzv * sizeof(double), device, NULL); // CSR value
+    cudaMemPrefetchAsync(&ARowPtr, nzv * sizeof(int), device, NULL); // Row ptr
+    cudaMemPrefetchAsync(&AColIndx, nzv * sizeof(int), device, NULL); // Column index
 
     cputimer_stop("Prefetching GPU memory to the device");
   }
 
   //@@ Insert code to create the cuBLAS handle
-
+  cublasStatus_t cublas_stat;
+  cusparseStatus_t sparse_stat;
+  cublas_stat = cublasCreate(&cublasHandle);     
+  sparse_stat = cusparseCreate(&cusparseHandle); 
+  sparse_stat = cusparseCreateMatDescr(&Adescriptor);  
+  
   //@@ Insert code to create the cuSPARSE handle
 
   //@@ Insert code to set the cuBLAS pointer mode to CUSPARSE_POINTER_MODE_HOST
@@ -201,8 +241,10 @@ int main(int argc, char **argv) {
   //@@ Insert the code to destroy the mat descriptor
 
   //@@ Insert the code to destroy the cuSPARSE handle
+  cusparseDestroy(cusparseHandle);
 
   //@@ Insert the code to destroy the cuBLAS handle
+  cublasDestroy(cublasHandle);
 
 
   //@@ Insert the code for deallocating memory
