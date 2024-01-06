@@ -81,9 +81,9 @@ int main(int argc, char **argv) {
   n_segments = (int)ceil(inputLength/segmentLength);
   
   //@@ Insert code below to allocate Host memory for input and output
-  hostInput1 = (DataType*) malloc(inputLength * sizeof(DataType));
-  hostInput2 = (DataType*) malloc(inputLength * sizeof(DataType));
-  hostOutput = (DataType*) malloc(inputLength * sizeof(DataType));
+  cudaHostAlloc(&hostInput1, inputLength * sizeof(DataType), cudaHostAllocDefault);
+  cudaHostAlloc(&hostInput2, inputLength * sizeof(DataType), cudaHostAllocDefault);
+  cudaHostAlloc(&hostOutput, inputLength * sizeof(DataType), cudaHostAllocDefault);
   resultRef = (DataType*) malloc(inputLength * sizeof(DataType));
   
   //@@ Insert code below to initialize hostInput1 and hostInput2 to random numbers, and create reference result in CPU
@@ -154,9 +154,9 @@ int main(int argc, char **argv) {
   cudaFree(deviceOutput);
   
   //@@ Free the CPU memory here
-  free(hostInput1);
-  free(hostInput2);
-  free(hostOutput);
+  cudaFreeHost(hostInput1);
+  cudaFreeHost(hostInput2);
+  cudaFreeHost(hostOutput);
   free(resultRef);
   free(startTime);
 
