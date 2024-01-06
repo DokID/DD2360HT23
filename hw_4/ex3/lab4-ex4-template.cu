@@ -117,7 +117,6 @@ int main(int argc, char **argv) {
   // Calculate the number of non zero values in the sparse matrix. This number
   // is known from the structure of the sparse matrix
   nzv = 3 * dimX - 6;
-  //printf("nzv: %d\n", nzv);
 
   //@@ Insert the code to allocate the temp, delta and the sparse matrix
   //@@ arrays using Unified Memory
@@ -152,22 +151,6 @@ int main(int argc, char **argv) {
   matrixInit(A, ARowPtr, AColIndx, dimX, alpha);
   cputimer_stop("Initializing the sparse matrix on the host");
 
-  //printf("A: [");
-  //for (int i = 0; i < nzv - 1; i++) {
-  //printf("%f, ", A[i]);
-  //}
-  //printf("%f]\n", A[nzv - 1]);
-  //printf("ARowPtr: [");
-  //for (int i = 0; i < dimX; i++) {
-  //printf("%d, ", ARowPtr[i]);
-  //}
-  //printf("%d]\n", ARowPtr[dimX]);
-  //printf("AColIndx: [");
-  //for (int i = 0; i < nzv - 1; i++) {
-  //printf("%d, ", AColIndx[i]);
-  //}
-  //printf("%d]\n", AColIndx[nzv - 1]);
-  
   //Initiliaze the boundary conditions for the heat equation
   cputimer_start();
   memset(temp, 0, sizeof(double) * dimX);
@@ -242,10 +225,9 @@ int main(int argc, char **argv) {
 
   //@@ Insert code to allocate the buffer needed by cuSPARSE
   gpuCheck(cudaMalloc(&buffer, bufferSize));
-
+  int it;
   // Perform the time step iterations
-  for (int it = 0; it < nsteps; ++it) {
-    printf("it: %d\n", it);
+  for (it = 0; it < nsteps; ++it) {
     //@@ Insert code to call cusparse api to compute the SMPV (sparse matrix multiplication) for
     //@@ the CSR matrix using cuSPARSE. This calculation corresponds to:
     //@@ delta = 1 * A * temp + 0 * delta
@@ -275,7 +257,7 @@ int main(int argc, char **argv) {
       break;
   }
 
-  printf("Finished iterating.\n");
+  printf("Finished iterating. Performed %d iterations.\n", it);
 
   // Calculate the exact solution using thrust
   thrust::device_ptr<double> thrustPtr(delta);
