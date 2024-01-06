@@ -45,13 +45,14 @@ void starTimer() {
 
 //@@ Insert code to implement timer stop
 
-void stopTimer() {
+void stopTimer(char *string = "") {
   struct timeval* currentTime = (timeval *) malloc(sizeof(timeval));
   struct timeval* diff = (timeval *) malloc(sizeof(timeval));
 
   gettimeofday(currentTime, NULL);
   timersub(currentTime, startTime, diff);
 
+  printf(string);
   printf("Time in seconds: %ld\n", diff->tv_sec);
   printf("Time in microseconds: %ld\n", diff->tv_usec);
 
@@ -113,6 +114,7 @@ int main(int argc, char **argv) {
   int no_of_blocks = (int) ceil(double(segmentLength) / double(threads_per_block));
 
   printf("Streaming data...\n");
+  starTimer();
 
   int offset, s_id, last_seg_len;
   for (int i = 0; i < n_segments; i++) {
@@ -140,7 +142,7 @@ int main(int argc, char **argv) {
 
   //@@ Insert code below to compare the output with the reference
   cudaDeviceSynchronize();  //Wait for all streams to finish before verifying result.
-  printf("All streams done!\n");
+  stopTimer("All streams done!\n");
   printf("\nResults match: %s\n", calculateDiff(resultRef, hostOutput, inputLength) ? "false" : "true");
   
   //@@ Kill the Streams
