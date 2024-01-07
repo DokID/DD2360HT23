@@ -8,10 +8,7 @@
 
 #include <cuda.h>
 
-#define THREADS_PER_DIM 16
-#define BLOCKS_PER_DIM 16
-#define THREADS_PER_BLOCK THREADS_PER_DIM*THREADS_PER_DIM
-
+#include "kmeans.h"
 #include "kmeans_cuda_kernel.cuh"
 
 //#define BLOCK_DELTA_REDUCE
@@ -19,9 +16,6 @@
 
 #define CPU_DELTA_REDUCE
 #define CPU_CENTER_REDUCE
-
-extern "C"
-int setup(int argc, char** argv);									/* function prototype */
 
 // GLOBAL!!!!!
 unsigned int num_threads_perdim = THREADS_PER_DIM;					/* sqrt(256) -- see references for this choice */
@@ -65,16 +59,16 @@ void allocateMemory(int npoints, int nfeatures, int nclusters, float **features)
 	block_new_centers = (float *) malloc(nclusters*nfeatures*sizeof(float));
 	
 	/* allocate memory for feature_flipped_d[][], feature_d[][] (device) */
-	cudaMalloc((void**) &feature_flipped_d, npoints*nfeatures*sizeof(float));
-	cudaMemcpy(feature_flipped_d, features[0], npoints*nfeatures*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMalloc((void**) &feature_d, npoints*nfeatures*sizeof(float));
+	gpuCheck(cudaMalloc((void**) &feature_flipped_d, npoints*nfeatures*sizeof(float)));
+	gpuCheck(cudaMemcpy(feature_flipped_d, features[0], npoints*nfeatures*sizeof(float), cudaMemcpyHostToDevice));
+	gpuCheck(cudaMalloc((void**) &feature_d, npoints*nfeatures*sizeof(float)));
 		
 	/* invert the data array (kernel execution) */	
 	invert_mapping<<<num_blocks,num_threads>>>(feature_flipped_d,feature_d,npoints,nfeatures);
 		
 	/* allocate memory for membership_d[] and clusters_d[][] (device) */
-	cudaMalloc((void**) &membership_d, npoints*sizeof(int));
-	cudaMalloc((void**) &clusters_d, nclusters*nfeatures*sizeof(float));
+	gpuCheck(cudaMalloc((void**) &membership_d, npoints*sizeof(int)));
+	gpuCheck(cudaMalloc((void**) &clusters_d, nclusters*nfeatures*sizeof(float)));
 
 	
 #ifdef BLOCK_DELTA_REDUCE
@@ -125,7 +119,7 @@ int
 main( int argc, char** argv) 
 {
 	// make sure we're running on the big card
-    cudaSetDevice(1);
+    cudaSetDevice(0);
 	// as done in the CUDA start/help document provided
 	setup(argc, argv);    
 }
@@ -154,49 +148,54 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
     cudaResourceDesc resDescFeaturesFlipped{};
     cudaResourceDesc resDescClusters{};
 
-    memset(&resDescFeatures, 0, sizeof resDescFeatures);
+    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0,cudaChannelFormatKindFloat );
+
+    memset(&resDescFeatures, 0, sizeof(resDescFeatures));
     resDescFeatures.resType = cudaResourceTypeLinear;
     resDescFeatures.res.linear.devPtr = feature_d;
-    resDescFeatures.res.linear.desc.f = cudaChannelFormatKindFloat;
-    resDescFeatures.res.linear.desc.x = 8;  // Default value for cudaChannelFormatDescription
+    resDescFeatures.res.linear.desc = channelDesc;
+    //resDescFeatures.res.linear.desc.f = cudaChannelFormatKindFloat;
+    //resDescFeatures.res.linear.desc.x = 8;  // Default value for cudaChannelFormatDescription
     resDescFeatures.res.linear.sizeInBytes = npoints * nfeatures * sizeof(float);
 
-    memset(&resDescFeaturesFlipped, 0, sizeof resDescFeaturesFlipped);
+    memset(&resDescFeaturesFlipped, 0, sizeof(resDescFeaturesFlipped));
     resDescFeaturesFlipped.resType = cudaResourceTypeLinear;
     resDescFeaturesFlipped.res.linear.devPtr = feature_flipped_d;
-    resDescFeaturesFlipped.res.linear.desc.f = cudaChannelFormatKindFloat;
-    resDescFeaturesFlipped.res.linear.desc.x = 8;  // Default value for cudaChannelFormatDescription
+    resDescFeaturesFlipped.res.linear.desc = channelDesc;
+    //resDescFeaturesFlipped.res.linear.desc.f = cudaChannelFormatKindFloat;
+    //resDescFeaturesFlipped.res.linear.desc.x = 8;  // Default value for cudaChannelFormatDescription
     resDescFeaturesFlipped.res.linear.sizeInBytes = npoints * nfeatures * sizeof(float);
 
-    memset(&resDescClusters, 0, sizeof resDescClusters);
+    memset(&resDescClusters, 0, sizeof(resDescClusters));
     resDescClusters.resType = cudaResourceTypeLinear;
     resDescClusters.res.linear.devPtr = clusters_d;
-    resDescClusters.res.linear.desc.f = cudaChannelFormatKindFloat;
-    resDescClusters.res.linear.desc.x = 8;  // Default value for cudaChannelFormatDescription
+    resDescClusters.res.linear.desc = channelDesc;
+    //resDescClusters.res.linear.desc.f = cudaChannelFormatKindFloat;
+    //resDescClusters.res.linear.desc.x = 8;  // Default value for cudaChannelFormatDescription
     resDescClusters.res.linear.sizeInBytes = nclusters * nfeatures * sizeof(float);
 
     cudaTextureDesc texDesc{};
-    memset(&texDesc, 0, sizeof texDesc);
+    memset(&texDesc, 0, sizeof(texDesc));
     texDesc.readMode = cudaReadModeElementType;
     texDesc.filterMode = cudaFilterModePoint;
-    texDesc.normalizedCoords = false;
+    texDesc.normalizedCoords = 0;
 
-    cudaTextureObject_t t_features = 0;
-    cudaTextureObject_t t_features_flipped = 0;
-    cudaTextureObject_t t_clusters = 0;
-    cudaCreateTextureObject(&t_features, &resDescFeatures, &texDesc, nullptr);
-    cudaCreateTextureObject(&t_features_flipped, &resDescFeatures, &texDesc, nullptr);
-    cudaCreateTextureObject(&t_clusters, &resDescFeatures, &texDesc, nullptr);
+    cudaTextureObject_t t_features;
+    cudaTextureObject_t t_features_flipped;
+    cudaTextureObject_t t_clusters;
+    gpuCheck(cudaCreateTextureObject(&t_features, &resDescFeatures, &texDesc, nullptr));
+    gpuCheck(cudaCreateTextureObject(&t_features_flipped, &resDescFeatures, &texDesc, nullptr));
+    gpuCheck(cudaCreateTextureObject(&t_clusters, &resDescFeatures, &texDesc, nullptr));
 
 
 
-	cudaSetDevice(1);
+	cudaSetDevice(0);
 
 	/* copy membership (host to device) */
-	cudaMemcpy(membership_d, membership_new, npoints*sizeof(int), cudaMemcpyHostToDevice);
+	gpuCheck(cudaMemcpy(membership_d, membership_new, npoints*sizeof(int), cudaMemcpyHostToDevice));
 
 	/* copy clusters (host to device) */
-	cudaMemcpy(clusters_d, clusters[0], nclusters*nfeatures*sizeof(float), cudaMemcpyHostToDevice);
+	gpuCheck(cudaMemcpy(clusters_d, clusters[0], nclusters*nfeatures*sizeof(float), cudaMemcpyHostToDevice));
 
 	/* set up texture */
     // FIXME: Convert to new Texture Object API
@@ -227,7 +226,7 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
     //    printf("Couldn't bind clusters array to texture!\n");
 
 	/* copy clusters to constant memory */
-	cudaMemcpyToSymbol("c_clusters",clusters[0],nclusters*nfeatures*sizeof(float),0,cudaMemcpyHostToDevice);
+	gpuCheck(cudaMemcpyToSymbol(c_clusters,clusters[0],nclusters*nfeatures*sizeof(float),0,cudaMemcpyHostToDevice));
 
 
     /* setup execution parameters.
@@ -247,10 +246,10 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
                                       t_features,
                                       t_features_flipped);
 
-	cudaThreadSynchronize();
+	gpuCheck(cudaDeviceSynchronize());
 
 	/* copy back membership (device to host) */
-	cudaMemcpy(membership_new, membership_d, npoints*sizeof(int), cudaMemcpyDeviceToHost);	
+	gpuCheck(cudaMemcpy(membership_new, membership_d, npoints*sizeof(int), cudaMemcpyDeviceToHost));
 
 #ifdef BLOCK_CENTER_REDUCE
     /*** Copy back arrays of per block sums ***/

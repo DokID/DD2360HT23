@@ -136,6 +136,7 @@ int setup(int argc, char **argv) {
             case 'b': isBinaryFile = 1;
                       break;            
             case 't': threshold=atof(optarg);
+                      printf("th: %f\n", threshold);
                       break;
             case 'm': max_nclusters = atoi(optarg);
                       break;

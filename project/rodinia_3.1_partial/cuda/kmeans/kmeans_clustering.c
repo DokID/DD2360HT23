@@ -68,6 +68,7 @@
 #include <omp.h>
 
 #include "kmeans.h"
+#include "kmeans_cuda.cuh"
 
 #define RANDOM_MAX 2147483647
 
@@ -168,7 +169,7 @@ float** kmeans_clustering(float **feature,    /* in: [npoints][nfeatures] */
 		}	 
 		c++;
     } while ((delta > threshold) && (loop++ < 500));	/* makes sure loop terminates */
-	printf("iterated %d times\n", c);
+	printf("kmeansCuda ran %d times\n", c);
     free(new_centers[0]);
     free(new_centers);
     free(new_centers_len);
