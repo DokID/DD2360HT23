@@ -75,6 +75,7 @@
 
 #include "kmeans.h"
 #include "kmeans_cuda.cuh"
+#include "alloc.h"
 
 extern double wtime(void);
 float	min_rmse_ref = FLT_MAX;			/* reference min_rmse value */
@@ -101,7 +102,9 @@ int cluster(int      npoints,				/* number of data points */
 	int		i;
 
 	/* allocate memory for membership */
-    membership = (int*) malloc(npoints * sizeof(int));
+    allocateMembership(&membership, npoints);
+
+    initializeKernelLayout(npoints);
 
 	/* sweep k from min to max_nclusters to find the best number of clusters */
 	for(nclusters = min_nclusters; nclusters <= max_nclusters; nclusters++)
@@ -109,7 +112,6 @@ int cluster(int      npoints,				/* number of data points */
 		if (nclusters > npoints) break;	/* cannot have more clusters than points */
 
 		/* allocate device memory, invert data array (@ kmeans_cuda.cu) */
-		allocateMemory(npoints, nfeatures, nclusters, features);
 
 		/* iterate nloops times for each number of clusters */
 		for(i = 0; i < nloops; i++)
@@ -123,7 +125,7 @@ int cluster(int      npoints,				/* number of data points */
 													membership);
 
 			if (*cluster_centres) {
-				free((*cluster_centres)[0]);
+				deallocateClusters((*cluster_centres)[0]);
 				free(*cluster_centres);
 			}
 			*cluster_centres = tmp_cluster_centres;
@@ -147,10 +149,9 @@ int cluster(int      npoints,				/* number of data points */
 			}			
 		}
 		
-		deallocateMemory();							/* free device memory (@ kmeans_cuda.cu) */
 	}
 
-    free(membership);
+    deallocateMembership(membership);
 
     return index;
 }

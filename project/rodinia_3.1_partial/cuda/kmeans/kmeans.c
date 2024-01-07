@@ -79,6 +79,7 @@
 #include <fcntl.h>
 #include <omp.h>
 #include "kmeans.h"
+#include "alloc.h"
 
 extern double wtime(void);
 
@@ -172,7 +173,7 @@ int setup(int argc, char **argv) {
         /* allocate space for features[][] and read attributes of all objects */
         buf         = (float*) malloc(npoints*nfeatures*sizeof(float));
         features    = (float**)malloc(npoints*          sizeof(float*));
-        features[0] = (float*) malloc(npoints*nfeatures*sizeof(float));
+        allocateFeatures(features, npoints, nfeatures);
         for (i=1; i<npoints; i++)
             features[i] = features[i-1] + nfeatures;
 
@@ -201,7 +202,7 @@ int setup(int argc, char **argv) {
         /* allocate space for features[] and read attributes of all objects */
         buf         = (float*) malloc(npoints*nfeatures*sizeof(float));
         features    = (float**)malloc(npoints*          sizeof(float*));
-        features[0] = (float*) malloc(npoints*nfeatures*sizeof(float));
+        allocateFeatures(features, npoints, nfeatures);
         for (i=1; i<npoints; i++)
             features[i] = features[i-1] + nfeatures;
         rewind(infile);
@@ -228,8 +229,8 @@ int setup(int argc, char **argv) {
 		printf("Error: min_nclusters(%d) > npoints(%d) -- cannot proceed\n", min_nclusters, npoints);
 		exit(0);
 	}
-
-	srand(7);												/* seed for future random number generator */	
+    printf("Addresses in features[0..3]: %p; %p; %p; %p;\n", features[0], features[1], features[2], features[3]);
+	srand(7);												/* seed for future random number generator */
 	memcpy(features[0], buf, npoints*nfeatures*sizeof(float)); /* now features holds 2-dimensional array of features */
 	free(buf);
 
@@ -300,7 +301,7 @@ int setup(int argc, char **argv) {
 	
 
 	/* free up memory */
-	free(features[0]);
+    deallocateFeatures(features[0]);
 	free(features);    
     return(0);
 }

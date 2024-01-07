@@ -8,8 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void allocateMemory(int, int, int, float **);
-void deallocateMemory();
+void initializeKernelLayout(int);
 int kmeansCuda(float **, int, int, int, int *, float **, int *, float **);
 #ifdef __cplusplus
 }

@@ -15,11 +15,14 @@ endif
 
 all: kmeans
 
-kmeans: cluster.o kmeans.o kmeans_clustering.o kmeans_cuda.o kmeans_cuda_kernel.o rmse.o
+kmeans: alloc.o cluster.o kmeans.o kmeans_clustering.o kmeans_cuda.o kmeans_cuda_kernel.o rmse.o
 	$(CC) $(CC_FLAGS) $^ -o kmeans -L$(CUDA_LIB_DIR) -lcuda -lcudart -lm -lstdc++
 
 %.o: %.c
 	$(CC) $(CC_FLAGS) $< -c
+
+alloc.o: alloc.cu
+	$(NVCC) $(NVCC_FLAGS) alloc.cu -c
 
 kmeans_cuda.o: kmeans_cuda.cu
 	$(NVCC) $(NVCC_FLAGS) kmeans_cuda.cu -c

@@ -5,6 +5,10 @@
 #ifndef GPUPROG_HT23_KMEANS_CUDA_KERNEL_CUH
 #define GPUPROG_HT23_KMEANS_CUDA_KERNEL_CUH
 
+
+#define UNIFIED_MEMORY
+#define PREFETCH_ENABLED
+
 #define gpuCheck(stmt)                                               \
   do {                                                               \
       cudaError_t err = stmt;                                        \

@@ -69,6 +69,7 @@
 
 #include "kmeans.h"
 #include "kmeans_cuda.cuh"
+#include "alloc.h"
 
 #define RANDOM_MAX 2147483647
 
@@ -103,7 +104,7 @@ float** kmeans_clustering(float **feature,    /* in: [npoints][nfeatures] */
 
     /* allocate space for and initialize returning variable clusters[] */
     clusters    = (float**) malloc(nclusters *             sizeof(float*));
-    clusters[0] = (float*)  malloc(nclusters * nfeatures * sizeof(float));
+    allocateClusters(clusters, nclusters, nfeatures);
     for (i=1; i<nclusters; i++)
         clusters[i] = clusters[i-1] + nfeatures;
 
@@ -136,10 +137,10 @@ float** kmeans_clustering(float **feature,    /* in: [npoints][nfeatures] */
 	  membership[i] = -1;
 
     /* allocate space for and initialize new_centers_len and new_centers */
-    new_centers_len = (int*) calloc(nclusters, sizeof(int));
+    new_centers_len = calloc(nclusters, sizeof(int));
 
-    new_centers    = (float**) malloc(nclusters *            sizeof(float*));
-    new_centers[0] = (float*)  calloc(nclusters * nfeatures, sizeof(float));
+    new_centers    = malloc(nclusters * sizeof(float*));
+    new_centers[0] = calloc(nclusters * nfeatures, sizeof(float));
     for (i=1; i<nclusters; i++)
         new_centers[i] = new_centers[i-1] + nfeatures;
 
