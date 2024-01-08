@@ -119,8 +119,13 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
     dim3  threads( num_threads_perdim*num_threads_perdim );
 
 #ifdef PREFETCH_ENABLED
+    /* prefetch feature memory blocks to device before doing inversion */
     prefetchFeaturesToDevice(feature[0], npoints, nfeatures);
     prefetchFeaturesToDevice(feature_inverted, npoints, nfeatures);
+
+    int *d_ptr = &delta;
+    cudaMemPrefetchAsync(d_ptr, sizeof(int), cudaCpuDeviceId);
+
 #endif // PREFETCH_ENABLED
 
     invert_mapping<<<num_blocks, num_threads>>>(feature[0],
@@ -128,12 +133,15 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
                                                 npoints,
                                                 nfeatures);
 
+    delta = 0;
+
 #ifdef PREFETCH_ENABLED
+    /* prefetch remaining memory blocks  */
     prefetchClustersToDevice(clusters[0], nclusters, nfeatures);
     prefetchMembershipToDevice(membership, npoints);
+    cudaMemPrefetchAsync(d_ptr, sizeof(int), 0);
 #endif // PREFETCH_ENABLED
 
-    delta = 0;
 	/* execute the kernel */
     kmeansPoint<<< grid, threads >>>( feature_inverted,
                                       nfeatures,
@@ -148,7 +156,15 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
                                       &delta);
 	gpuCheck(cudaDeviceSynchronize());
 
+    /* clean up temporary allocations */
+    deallocateFeatures(feature_inverted);
+    cudaDestroyTextureObject(t_features);
+    cudaDestroyTextureObject(t_features_flipped);
+    cudaDestroyTextureObject(t_clusters);
+
 #ifdef PREFETCH_ENABLED
+    /* fetch back managed memory previously migrated to device, and used later on by host */
+    cudaMemPrefetchAsync(d_ptr, sizeof(int), cudaCpuDeviceId);
     prefetchClustersToHost(clusters[0], nclusters, nfeatures);
     prefetchFeaturesToHost(feature[0], npoints, nfeatures);
     prefetchMembershipToHost(membership, npoints);

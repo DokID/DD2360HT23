@@ -129,6 +129,8 @@ float** kmeans_clustering(float **feature,    /* in: [npoints][nfeatures] */
 		n++;
     }
 
+    free(initial);
+
 	/* initialize the membership to -1 for all */
     for (i=0; i < npoints; i++)
 	  membership[i] = -1;

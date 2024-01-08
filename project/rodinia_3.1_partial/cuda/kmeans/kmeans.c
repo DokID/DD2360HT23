@@ -296,8 +296,10 @@ int setup(int argc, char **argv) {
 	
 
 	/* free up memory */
+    deallocateClusters(cluster_centres[0]);
     deallocateFeatures(features[0]);
-	free(features);    
+    free(cluster_centres);
+    free(features);
     return(0);
 }
 
