@@ -45,8 +45,12 @@ void initializeKernelLayout(int npoints) {
 int
 main( int argc, char** argv) 
 {
-	// make sure we're running on the big card
+	// initialize device context (on cc12+)
     cudaSetDevice(0);
+#ifdef PREFETCH_ENABLED
+    // check prefetch condition
+    initPrefetch();
+#endif // PREFETCH_ENABLED
 	// as done in the CUDA start/help document provided
 	setup(argc, argv);    
 }
@@ -114,16 +118,20 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
     dim3  grid( num_blocks_perdim, num_blocks_perdim );
     dim3  threads( num_threads_perdim*num_threads_perdim );
 
+#ifdef PREFETCH_ENABLED
     prefetchFeaturesToDevice(feature[0], npoints, npoints);
     prefetchFeaturesToDevice(feature_inverted, npoints, nfeatures);
+#endif // PREFETCH_ENABLED
 
     invert_mapping<<<num_blocks, num_threads>>>(feature[0],
                                                 feature_inverted,
                                                 npoints,
                                                 nfeatures);
 
+#ifdef PREFETCH_ENABLED
     prefetchClustersToDevice(clusters[0], nclusters, nfeatures);
     prefetchMembershipToDevice(membership, npoints);
+#endif // PREFETCH_ENABLED
 
     delta = 0;
 	/* execute the kernel */
@@ -140,9 +148,11 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
                                       &delta);
 	gpuCheck(cudaDeviceSynchronize());
 
+#ifdef PREFETCH_ENABLED
     prefetchClustersToHost(clusters[0], nclusters, nfeatures);
     prefetchFeaturesToHost(feature[0], npoints, npoints);
     prefetchMembershipToHost(membership, npoints);
+#endif // PREFETCH_ENABLED
 
 #ifdef BLOCK_CENTER_REDUCE
     /*** Copy back arrays of per block sums ***/

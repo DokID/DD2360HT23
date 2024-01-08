@@ -9,23 +9,44 @@
 #include "kmeans_cuda_kernel.cuh"
 #include "alloc.h"
 
+#ifdef PREFETCH_ENABLED
+int concurrentAccess = 0;
+
+extern "C"
+void initPrefetch() {
+    gpuCheck(cudaDeviceGetAttribute(&concurrentAccess, cudaDevAttrConcurrentManagedAccess, 0));
+}
+
+void _prefetch(void *devPtr, int size, int dstDevice) {
+    if (concurrentAccess) {
+        gpuCheck(cudaMemPrefetchAsync(devPtr, size, dstDevice));
+        if (dstDevice == cudaCpuDeviceId) {
+            // fetching data to host must be awaited explicitly
+            gpuCheck(cudaDeviceSynchronize());
+        }
+    }
+}
+#endif // PREFETCH_ENABLED
+
 extern "C"
 void allocateFeatures(float **features, int npoints, int nfeatures) {
     gpuCheck(cudaMallocManaged(features, npoints * nfeatures * sizeof(float)));
-    gpuCheck(cudaMemPrefetchAsync(features[0], npoints * nfeatures * sizeof(float), cudaCpuDeviceId));
-    gpuCheck(cudaDeviceSynchronize());
+#ifdef PREFETCH_ENABLED
+    _prefetch(features[0], npoints * nfeatures * sizeof(float), cudaCpuDeviceId);
+#endif // PREFETCH_ENABLED
 }
 
+#ifdef PREFETCH_ENABLED
 extern "C"
 void prefetchFeaturesToHost(float *features, int npoints, int nfeatures) {
-    gpuCheck(cudaMemPrefetchAsync(features, npoints * nfeatures * sizeof(float), cudaCpuDeviceId));
-    gpuCheck(cudaDeviceSynchronize());
+    _prefetch(features, npoints * nfeatures * sizeof(float), cudaCpuDeviceId);
 }
 
 extern "C"
 void prefetchFeaturesToDevice(float *features, int npoints, int nfeatures) {
-    gpuCheck(cudaMemPrefetchAsync(features, npoints * nfeatures * sizeof(float), 0));
+    _prefetch(features, npoints * nfeatures * sizeof(float), 0);
 }
+#endif // PREFETCH_ENABLED
 
 extern "C"
 void deallocateFeatures(float *features) {
@@ -35,20 +56,22 @@ void deallocateFeatures(float *features) {
 extern "C"
 void allocateClusters(float **clusters, int nclusters, int nfeatures) {
     gpuCheck(cudaMallocManaged(clusters, nclusters * nfeatures * sizeof(float)));
-    gpuCheck(cudaMemPrefetchAsync(clusters[0], nclusters * nfeatures * sizeof(float), cudaCpuDeviceId));
-    gpuCheck(cudaDeviceSynchronize());
+#ifdef PREFETCH_ENABLED
+    _prefetch(clusters[0], nclusters * nfeatures * sizeof(float), cudaCpuDeviceId);
+#endif // PREFETCH_ENABLED
 }
 
+#ifdef PREFETCH_ENABLED
 extern "C"
 void prefetchClustersToHost(float *clusters, int nclusters, int nfeatures) {
-    gpuCheck(cudaMemPrefetchAsync(clusters, nclusters * nfeatures * sizeof(float), cudaCpuDeviceId));
-    gpuCheck(cudaDeviceSynchronize());
+    _prefetch(clusters, nclusters * nfeatures * sizeof(float), cudaCpuDeviceId);
 }
 
 extern "C"
 void prefetchClustersToDevice(float *clusters, int nclusters, int nfeatures) {
-    gpuCheck(cudaMemPrefetchAsync(clusters, nclusters * nfeatures * sizeof(float), 0));
+    _prefetch(clusters, nclusters * nfeatures * sizeof(float), 0);
 }
+#endif // PREFETCH_ENABLED
 
 extern "C"
 void deallocateClusters(float *clusters) {
@@ -58,20 +81,22 @@ void deallocateClusters(float *clusters) {
 extern "C"
 void allocateMembership(int **membership, int npoints) {
     gpuCheck(cudaMallocManaged(membership, npoints * sizeof(int)));
-    gpuCheck(cudaMemPrefetchAsync(membership[0], npoints * sizeof(int), cudaCpuDeviceId));
-    gpuCheck(cudaDeviceSynchronize());
+#ifdef PREFETCH_ENABLED
+    _prefetch(membership[0], npoints * sizeof(int), cudaCpuDeviceId);
+#endif // PREFETCH_ENABLED
 }
 
+#ifdef PREFETCH_ENABLED
 extern "C"
 void prefetchMembershipToHost(int *memberhsip, int npoints) {
-    gpuCheck(cudaMemPrefetchAsync(memberhsip, npoints * sizeof(int), cudaCpuDeviceId));
-    gpuCheck(cudaDeviceSynchronize());
+    _prefetch(memberhsip, npoints * sizeof(int), cudaCpuDeviceId);
 }
 
 extern "C"
 void prefetchMembershipToDevice(int *memberhsip, int npoints) {
-    gpuCheck(cudaMemPrefetchAsync(memberhsip, npoints * sizeof(int), 0));
+    _prefetch(memberhsip, npoints * sizeof(int), 0);
 }
+#endif // PREFETCH_ENABLED
 
 extern "C"
 void deallocateMembership(int *membership) {

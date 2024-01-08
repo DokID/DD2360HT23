@@ -1,8 +1,6 @@
 #ifndef _KMEANS_CUDA_KERNEL_H_
 #define _KMEANS_CUDA_KERNEL_H_
 
-#include <stdio.h>
-#include <cuda.h>
 #include "kmeans_cuda_kernel.cuh"
 #include "kmeans.h"
 
