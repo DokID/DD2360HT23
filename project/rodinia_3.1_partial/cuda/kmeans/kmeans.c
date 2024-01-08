@@ -224,7 +224,7 @@ int setup(int argc, char **argv) {
 		printf("Error: min_nclusters(%d) > npoints(%d) -- cannot proceed\n", min_nclusters, npoints);
 		exit(0);
 	}
-    printf("Addresses in features[0..3]: %p; %p; %p; %p;\n", features[0], features[1], features[2], features[3]);
+
 	srand(7);												/* seed for future random number generator */
 	memcpy(features[0], buf, npoints*nfeatures*sizeof(float)); /* now features holds 2-dimensional array of features */
 	free(buf);

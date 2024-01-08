@@ -136,7 +136,8 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
 									  block_clusters_d,
 									  block_deltas_d,
                                       t_features,
-                                      t_features_flipped);
+                                      t_features_flipped,
+                                      &delta);
 	gpuCheck(cudaDeviceSynchronize());
 
     prefetchClustersToHost(clusters[0], nclusters, nfeatures);

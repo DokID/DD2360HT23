@@ -23,8 +23,18 @@
 #define THREADS_PER_BLOCK THREADS_PER_DIM*THREADS_PER_DIM
 
 __global__ void invert_mapping(float*, float*, int, int);
-__global__ void kmeansPoint(float*, int, int, int, int*, float*, float*, int*, cudaTextureObject_t, cudaTextureObject_t);
+__global__ void kmeansPoint(float*,
+                            int,
+                            int,
+                            int,
+                            int*,
+                            float*,
+                            float*,
+                            int*,
+                            cudaTextureObject_t,
+                            cudaTextureObject_t,
+                            int*);
 
-__device__ __managed__ int delta = 0;			                /* number of points with new membership */
+__device__ __managed__ int delta;			                /* number of points with new membership */
 
 #endif //GPUPROG_HT23_KMEANS_CUDA_KERNEL_CUH

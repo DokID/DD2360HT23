@@ -50,7 +50,8 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 			float  *block_clusters,
 			int    *block_deltas,
             cudaTextureObject_t t_features,
-            cudaTextureObject_t t_features_flipped)
+            cudaTextureObject_t t_features_flipped,
+            int     *d_ptr)
 {
 
 	// block ID
@@ -85,7 +86,6 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 			if (dist < min_dist) {
 				min_dist = dist;
 				index    = i;
-                atomicAdd(&delta, 1);   // Many threads will compete here, so must be atomic
 			}
 		}
 	}
@@ -107,7 +107,10 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 		}
 #endif
 		/* assign the membership to object point_id */
-		membership[point_id] = index;
+        if (membership[point_id] != index) {
+            membership[point_id] = index;
+            atomicAdd(d_ptr, 1);   // Record changed membership. Must be atomic.
+        }
 	}
 
 #ifdef GPU_DELTA_REDUCTION

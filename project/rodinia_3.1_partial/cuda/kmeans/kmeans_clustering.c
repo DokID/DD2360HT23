@@ -83,7 +83,7 @@ float** kmeans_clustering(float **feature,    /* in: [npoints][nfeatures] */
     int      i, j, n = 0;				/* counters */
 	int		 loop=0, temp;
     int     *new_centers_len;	/* [nclusters]: no. of points in each cluster */
-    float    delta;				/* if the point moved */
+    int     delta;				/* if the point moved */
     float  **clusters;			/* out: [nclusters][nfeatures] */
     float  **new_centers;		/* [nclusters][nfeatures] */
 
@@ -142,17 +142,17 @@ float** kmeans_clustering(float **feature,    /* in: [npoints][nfeatures] */
 
 	/* iterate until convergence */
 	do {
-        delta = 0.0;
+        delta = 0;
 		// CUDA
-		delta = (float) kmeansCuda(feature,			/* in: [npoints][nfeatures] */
-								   nfeatures,		/* number of attributes for each point */
-								   npoints,			/* number of data points */
-								   nclusters,		/* number of clusters */
-								   membership,		/* which cluster the point belongs to */
-								   clusters,		/* out: [nclusters][nfeatures] */
-								   new_centers_len,	/* out: number of points in each cluster */
-								   new_centers		/* sum of points in each cluster */
-								   );
+		delta = kmeansCuda(feature,			/* in: [npoints][nfeatures] */
+                           nfeatures,		/* number of attributes for each point */
+                           npoints,			/* number of data points */
+                           nclusters,		/* number of clusters */
+                           membership,		/* which cluster the point belongs to */
+                           clusters,		/* out: [nclusters][nfeatures] */
+                           new_centers_len,	/* out: number of points in each cluster */
+                           new_centers		/* sum of points in each cluster */
+                           );
 
 		/* replace old cluster centers with new_centers */
 		/* CPU side of reduction */
@@ -165,7 +165,7 @@ float** kmeans_clustering(float **feature,    /* in: [npoints][nfeatures] */
 			new_centers_len[i] = 0;			/* set back to 0 */
 		}	 
 		c++;
-    } while ((delta > threshold) && (loop++ < 500));	/* makes sure loop terminates */
+    } while (((((float) delta)/((float) npoints)) > threshold) && (loop++ < 500));	/* makes sure loop terminates */
 	printf("kmeansCuda ran %d times\n", c);
     free(new_centers[0]);
     free(new_centers);
