@@ -1,6 +1,17 @@
-//
-// Created by gaborn on 2024-01-07.
-//
+/**
+ * alloc.cu defines all of the Unified Memory management needed by the kmeans
+ * project. It exposes functionality for creating, prefetching*, and freeing
+ * managed memory allocations.
+ *
+ * * This module can be compiled both with, and without support for prefetching.
+ *      If it is compiled with prefetching support, it automatically handles
+ *      prefetching data to the host immediately after allocation, as well as
+ *      awaiting data moves from device to host, since the synchronicity of
+ *      that type of transfer is highly situational.
+ *
+ * Created by:  Gabor Nagy <gaborn@kth.se>
+ *              Christian Weigelt <weigelt@kth.se>
+ */
 #include <cuda.h>
 #include <stdlib.h>
 #include <stdio.h>

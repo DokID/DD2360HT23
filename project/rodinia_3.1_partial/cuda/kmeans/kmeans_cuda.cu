@@ -17,8 +17,6 @@ unsigned int num_threads_perdim = THREADS_PER_DIM;					/* sqrt(256) -- see refer
 unsigned int num_blocks_perdim = BLOCKS_PER_DIM;					/* temporary */
 unsigned int num_threads = num_threads_perdim*num_threads_perdim;	/* number of threads */
 unsigned int num_blocks = num_blocks_perdim*num_blocks_perdim;		/* number of blocks */
-         int concurrentAccessQ;                                     // Check if concurrent access flag is set
-         int device = 0;                                            // Device to be used
 
 
 float  *feature_inverted;											/* original (not inverted) data array */
@@ -27,6 +25,7 @@ float  *block_clusters_d;											/* per block calculation of cluster centers 
 int    *block_deltas_d;												/* per block calculation of deltas */
 
 extern "C"
+/* Set up the grid and block size for future kernel invocations. */
 void initializeKernelLayout(int npoints) {
     num_blocks = npoints / num_threads;
     if (npoints % num_threads > 0)		/* defeat truncation */
@@ -37,6 +36,36 @@ void initializeKernelLayout(int npoints) {
         num_blocks_perdim++;
 
     num_blocks = num_blocks_perdim*num_blocks_perdim;
+}
+
+extern "C"
+/* Invert the layout of the features matrix, and copy it to a separate
+ * allocation in memory, internal to the kmeans_cuda.cu file.*/
+void invertFeatures(float **features, int npoints, int nfeatures) {
+
+    allocateFeatures(&feature_inverted, npoints, nfeatures);
+
+#ifdef PREFETCH_ENABLED
+    /* prefetch feature memory blocks to device before doing inversion */
+    prefetchFeaturesToDevice(features[0], npoints, nfeatures);
+    prefetchFeaturesToDevice(feature_inverted, npoints, nfeatures);
+#endif // PREFETCH_ENABLED
+
+    invert_mapping<<<num_blocks, num_threads>>>(features[0],
+                                                feature_inverted,
+                                                npoints,
+                                                nfeatures);
+#ifdef PREFETCH_ENABLED
+    prefetchFeaturesToHost(features[0], npoints, nfeatures);
+#endif // PREFETCH_ENABLED
+
+    gpuCheck(cudaDeviceSynchronize());
+}
+
+extern "C"
+/* Free the internal, inverted copy of the features matrix.  */
+void freeInvertedFeatures() {
+    deallocateFeatures(feature_inverted);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,6 +103,7 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
 {
 	int i,j;				/* counters */
 
+    /* Create the needed Texture objects. */
     cudaTextureObject_t t_features;
     cudaTextureObject_t t_features_flipped;
     cudaTextureObject_t t_clusters;
@@ -81,8 +111,6 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
     cudaResourceDesc resDescFeaturesFlipped{};
     cudaResourceDesc resDescClusters{};
     cudaTextureDesc texDesc{};
-
-    allocateFeatures(&feature_inverted, npoints, nfeatures);
 
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0,cudaChannelFormatKindFloat );
 
@@ -110,8 +138,8 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
     texDesc.normalizedCoords = 0;
 
     gpuCheck(cudaCreateTextureObject(&t_features, &resDescFeatures, &texDesc, nullptr));
-    gpuCheck(cudaCreateTextureObject(&t_features_flipped, &resDescFeatures, &texDesc, nullptr));
-    gpuCheck(cudaCreateTextureObject(&t_clusters, &resDescFeatures, &texDesc, nullptr));
+    gpuCheck(cudaCreateTextureObject(&t_features_flipped, &resDescFeaturesFlipped, &texDesc, nullptr));
+    gpuCheck(cudaCreateTextureObject(&t_clusters, &resDescClusters, &texDesc, nullptr));
 
     /* setup execution parameters.
 	   changed to 2d (source code on NVIDIA CUDA Programming Guide) */
@@ -119,24 +147,15 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
     dim3  threads( num_threads_perdim*num_threads_perdim );
 
 #ifdef PREFETCH_ENABLED
-    /* prefetch feature memory blocks to device before doing inversion */
-    prefetchFeaturesToDevice(feature[0], npoints, nfeatures);
-    prefetchFeaturesToDevice(feature_inverted, npoints, nfeatures);
-
+    /* Prefetch delta to host memory. */
     int *d_ptr = &delta;
     cudaMemPrefetchAsync(d_ptr, sizeof(int), cudaCpuDeviceId);
-
 #endif // PREFETCH_ENABLED
-
-    invert_mapping<<<num_blocks, num_threads>>>(feature[0],
-                                                feature_inverted,
-                                                npoints,
-                                                nfeatures);
 
     delta = 0;
 
 #ifdef PREFETCH_ENABLED
-    /* prefetch remaining memory blocks  */
+    /* Prefetch managed memory blocks to device.  */
     prefetchClustersToDevice(clusters[0], nclusters, nfeatures);
     prefetchMembershipToDevice(membership, npoints);
     cudaMemPrefetchAsync(d_ptr, sizeof(int), 0);
@@ -156,8 +175,7 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
                                       &delta);
 	gpuCheck(cudaDeviceSynchronize());
 
-    /* clean up temporary allocations */
-    deallocateFeatures(feature_inverted);
+    /* Clean up temporary texture objects. */
     cudaDestroyTextureObject(t_features);
     cudaDestroyTextureObject(t_features_flipped);
     cudaDestroyTextureObject(t_clusters);

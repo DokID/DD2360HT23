@@ -100,6 +100,7 @@ int cluster(int      npoints,				/* number of data points */
     allocateMembership(&membership, npoints);
 
     initializeKernelLayout(npoints);
+    invertFeatures(features, npoints, nfeatures);
 
 	/* sweep k from min to max_nclusters to find the best number of clusters */
 	for(nclusters = min_nclusters; nclusters <= max_nclusters; nclusters++)
@@ -144,6 +145,7 @@ int cluster(int      npoints,				/* number of data points */
 	}
 
     deallocateMembership(membership);
+    freeInvertedFeatures();
 
     return index;
 }

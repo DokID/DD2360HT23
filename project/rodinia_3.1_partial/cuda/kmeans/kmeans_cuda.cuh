@@ -9,6 +9,8 @@
 extern "C" {
 #endif
 void initializeKernelLayout(int);
+void invertFeatures(float **, int, int);
+void freeInvertedFeatures();
 int kmeansCuda(float **, int, int, int, int *, float **, int *, float **);
 #ifdef __cplusplus
 }
