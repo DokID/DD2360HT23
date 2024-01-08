@@ -25,9 +25,6 @@
 __global__ void invert_mapping(float*, float*, int, int);
 __global__ void kmeansPoint(float*, int, int, int, int*, float*, float*, int*, cudaTextureObject_t, cudaTextureObject_t);
 
-// FIXME: Make this a runtime selectable variable!
-#define ASSUMED_NR_CLUSTERS 32
-
-__constant__ float c_clusters[ASSUMED_NR_CLUSTERS*34];		/* constant memory for cluster centers */
+__device__ __managed__ int delta = 0;			                /* number of points with new membership */
 
 #endif //GPUPROG_HT23_KMEANS_CUDA_KERNEL_CUH

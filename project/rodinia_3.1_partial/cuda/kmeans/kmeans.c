@@ -74,16 +74,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
-#include <math.h>
 #include <fcntl.h>
-#include <omp.h>
 #include "kmeans.h"
 #include "alloc.h"
 
 extern double wtime(void);
-
-
 
 /*---< usage() >------------------------------------------------------------*/
 void usage(char *argv0) {

@@ -65,13 +65,8 @@
 /**                                                                     **/
 /*************************************************************************/
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <math.h>
 #include <float.h>
-#include <omp.h>
 
 #include "kmeans.h"
 #include "kmeans_cuda.cuh"
@@ -111,8 +106,6 @@ int cluster(int      npoints,				/* number of data points */
 	{
 		if (nclusters > npoints) break;	/* cannot have more clusters than points */
 
-		/* allocate device memory, invert data array (@ kmeans_cuda.cu) */
-
 		/* iterate nloops times for each number of clusters */
 		for(i = 0; i < nloops; i++)
 		{
@@ -129,7 +122,6 @@ int cluster(int      npoints,				/* number of data points */
 				free(*cluster_centres);
 			}
 			*cluster_centres = tmp_cluster_centres;
-	        
 					
 			/* find the number of clusters with the best RMSE */
 			if(isRMSE)

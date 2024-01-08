@@ -63,9 +63,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <float.h>
-#include <math.h>
-#include <omp.h>
 
 #include "kmeans.h"
 #include "kmeans_cuda.cuh"
@@ -138,7 +135,6 @@ float** kmeans_clustering(float **feature,    /* in: [npoints][nfeatures] */
 
     /* allocate space for and initialize new_centers_len and new_centers */
     new_centers_len = calloc(nclusters, sizeof(int));
-
     new_centers    = malloc(nclusters * sizeof(float*));
     new_centers[0] = calloc(nclusters * nfeatures, sizeof(float));
     for (i=1; i<nclusters; i++)

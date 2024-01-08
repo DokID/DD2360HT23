@@ -75,7 +75,7 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 			{					
 				int addr = point_id + j*npoints;					/* appropriate index of data point */
 				float diff = (tex1Dfetch<float>(t_features,addr) -
-							  c_clusters[cluster_base_index + j]);	/* distance between a data point to cluster centers */
+							  clusters[cluster_base_index + j]);	/* distance between a data point to cluster centers */
 				ans += diff*diff;									/* sum of squares */
 			}
 			dist = ans;
@@ -85,6 +85,7 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 			if (dist < min_dist) {
 				min_dist = dist;
 				index    = i;
+                atomicAdd(&delta, 1);   // Many threads will compete here, so must be atomic
 			}
 		}
 	}
