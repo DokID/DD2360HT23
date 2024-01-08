@@ -119,7 +119,7 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
     dim3  threads( num_threads_perdim*num_threads_perdim );
 
 #ifdef PREFETCH_ENABLED
-    prefetchFeaturesToDevice(feature[0], npoints, npoints);
+    prefetchFeaturesToDevice(feature[0], npoints, nfeatures);
     prefetchFeaturesToDevice(feature_inverted, npoints, nfeatures);
 #endif // PREFETCH_ENABLED
 
@@ -150,7 +150,7 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
 
 #ifdef PREFETCH_ENABLED
     prefetchClustersToHost(clusters[0], nclusters, nfeatures);
-    prefetchFeaturesToHost(feature[0], npoints, npoints);
+    prefetchFeaturesToHost(feature[0], npoints, nfeatures);
     prefetchMembershipToHost(membership, npoints);
 #endif // PREFETCH_ENABLED
 
